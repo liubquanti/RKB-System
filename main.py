@@ -1,10 +1,9 @@
 import logging
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import requests
-import random
-from config import TOKEN
-from config import CHANNEL_ID
+from datetime import datetime
+from config import TOKEN, CHANNEL_ID
 
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -16,9 +15,13 @@ def get_random_image():
     response = requests.get(url)
     data = response.json()
     if data:
-        image_url = data[0]['file_url']
-        return image_url
-    return None
+        image_data = data[0]
+        image_url = image_data.get('file_url')
+        published_at = image_data.get('created_at')
+        tags = image_data.get('tag_string_character', '')
+        characters = tags.replace(' ', ', ')
+        return image_url, published_at, characters
+    return None, None, None
 
 # Команда /start
 async def start(update: Update, context: CallbackContext) -> None:
@@ -26,15 +29,19 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
-    image_url = get_random_image()
+    image_url, published_at, characters = get_random_image()
     if image_url:
         keyboard = [
             [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
             [InlineKeyboardButton("Відхилити", callback_data='reject')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # Формуємо текст опису зображення з додаванням часу публікації та персонажів
+        caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {characters if characters else 'Немає персонажів'}"
+        
         context.user_data['current_image'] = image_url
-        await update.message.reply_photo(photo=image_url, reply_markup=reply_markup)
+        await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup)
     else:
         await update.message.reply_text('Не вдалося отримати зображення. Спробуйте ще раз.')
 
@@ -48,15 +55,19 @@ async def button(update: Update, context: CallbackContext) -> None:
             await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url)
             await query.edit_message_text(text="Зображення підтверджено та опубліковано.")
     elif query.data == 'reject':
-        image_url = get_random_image()
+        image_url, published_at, characters = get_random_image()
         if image_url:
             keyboard = [
                 [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
                 [InlineKeyboardButton("Відхилити", callback_data='reject')]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            # Формуємо текст опису зображення з додаванням часу публікації та персонажів
+            caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {characters if characters else 'Немає персонажів'}"
+            
             context.user_data['current_image'] = image_url
-            await query.edit_message_media(media=InputMediaPhoto(image_url), reply_markup=reply_markup)
+            await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption), reply_markup=reply_markup)
         else:
             await query.edit_message_text(text='Не вдалося отримати зображення. Спробуйте ще раз.')
 
