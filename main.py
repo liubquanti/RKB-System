@@ -4,22 +4,25 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Call
 import requests
 from datetime import datetime
 from config import TOKEN, CHANNEL_ID
+from tags import tags  # Імпорт тегів з файлу tags.py
+import random
 
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Функція для отримання випадкового зображення з Danbooru
+# Функція для отримання випадкового зображення з Danbooru з врахуванням тегів
 def get_random_image():
-    url = "https://danbooru.donmai.us/posts.json?random=true"
+    selected_tag = random.choice(tags)
+    url = f"https://danbooru.donmai.us/posts.json?tags={selected_tag}&random=true"
     response = requests.get(url)
     data = response.json()
     if data:
         image_data = data[0]
         image_url = image_data.get('file_url')
         published_at = image_data.get('created_at')
-        tags = image_data.get('tag_string_character', '')
-        characters = tags.replace(' ', ', ')
+        tag_string_character = image_data.get('tag_string_character', '')
+        characters = tag_string_character.replace(' ', ', ')
         return image_url, published_at, characters
     return None, None, None
 
