@@ -1,4 +1,5 @@
 import logging
+import re
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import requests
@@ -37,6 +38,11 @@ def get_random_image():
         return image_url, published_at, characters
     return None, None, None
 
+# Функція для очищення імен персонажів
+def clean_character_name(name):
+    # Видаляємо текст в дужках разом з дужками та зайве нижнє підкреслення перед дужками
+    return re.sub(r'_?\([^)]*\)', '', name)
+
 # Команда /start
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text('Вітаю! Надішліть команду /get_image для отримання випадкового зображення.')
@@ -51,8 +57,10 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Формуємо текст опису зображення з додаванням часу публікації та персонажів
-        caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {characters if characters else 'Немає персонажів'}"
+        # Формуємо текст опису зображення з додаванням часу публікації та персонажів у вигляді хеш-тегів
+        cleaned_characters = ', '.join([clean_character_name(char) for char in characters.split(', ')])
+        hashtags = ' '.join([f"#{char}" for char in cleaned_characters.split(', ')])
+        caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {hashtags if hashtags else 'Немає персонажів'}"
         
         context.user_data['current_image'] = image_url
         context.user_data['current_caption'] = caption
@@ -91,8 +99,10 @@ async def button(update: Update, context: CallbackContext) -> None:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # Формуємо текст опису зображення з додаванням часу публікації та персонажів
-                caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {characters if characters else 'Немає персонажів'}"
+                # Формуємо текст опису зображення з додаванням часу публікації та персонажів у вигляді хеш-тегів
+                cleaned_characters = ', '.join([clean_character_name(char) for char in characters.split(', ')])
+                hashtags = ' '.join([f"#{char}" for char in cleaned_characters.split(', ')])
+                caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {hashtags if hashtags else 'Немає персонажів'}"
                 
                 context.user_data['current_image'] = image_url
                 context.user_data['current_caption'] = caption
