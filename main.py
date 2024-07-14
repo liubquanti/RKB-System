@@ -7,6 +7,7 @@ import requests
 from datetime import datetime
 from config import TOKEN, CHANNEL_ID
 from tags import tags  # Імпорт тегів з файлу tags.py
+from banned import banned_tags
 import random
 import time
 
@@ -22,22 +23,33 @@ def is_image_accessible(url):
     except requests.RequestException:
         return False
 
-# Функція для отримання випадкового зображення з Danbooru з врахуванням тегів
+# Функція для отримання випадкового зображення з Danbooru з врахуванням всіх тегів
 def get_random_image():
-    selected_tag = random.choice(tags)
-    url = f"https://danbooru.donmai.us/posts.json?tags={selected_tag}&random=true"
-    response = requests.get(url)
-    data = response.json()
-    if data:
-        image_data = data[0]
-        image_url = image_data.get('file_url')
-        if not is_image_accessible(image_url):
-            return None, None, None, None
-        published_at = image_data.get('created_at')
-        tag_string_character = image_data.get('tag_string_character', '')
-        characters = tag_string_character.replace(' ', ', ')
-        copyright_info = image_data.get('tag_string_copyright', '')
-        return image_url, published_at, characters, copyright_info
+    all_tags = ' '.join(tags)  # Об'єднати всі теги в один рядок
+    url = f"https://danbooru.donmai.us/posts.json?tags={all_tags}&random=true"
+    
+    for _ in range(10):  # Максимум 10 спроб знайти зображення без забанених тегів
+        response = requests.get(url)
+        data = response.json()
+        
+        if isinstance(data, list) and data:
+            random.shuffle(data)  # Перемішати результати для додаткової випадковості
+            
+            for image_data in data:
+                image_url = image_data.get('file_url')
+                tag_string = image_data.get('tag_string', '')
+
+                # Перевірити, чи містить тег забанені теги
+                if any(banned_tag in tag_string for banned_tag in banned_tags):
+                    continue
+
+                if is_image_accessible(image_url):
+                    published_at = image_data.get('created_at')
+                    tag_string_character = image_data.get('tag_string_character', '')
+                    characters = tag_string_character.replace(' ', ', ')
+                    copyright_info = image_data.get('tag_string_copyright', '')
+                    return image_url, published_at, characters, copyright_info
+
     return None, None, None, None
 
 # Функція для очищення імен персонажів
