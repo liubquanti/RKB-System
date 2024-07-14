@@ -6,6 +6,7 @@ from datetime import datetime
 from config import TOKEN, CHANNEL_ID
 from tags import tags  # Імпорт тегів з файлу tags.py
 import random
+import time
 
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -69,32 +70,41 @@ async def button(update: Update, context: CallbackContext) -> None:
         if image_url:
             try:
                 await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
-                await query.edit_message_text(text="Зображення підтверджено та опубліковано.")
+                try:
+                    await query.edit_message_text(text="Зображення підтверджено та опубліковано.")
+                except Exception as e:
+                    logger.error(f"Failed to edit message text: {e}")
             except Exception as e:
                 logger.error(f"Failed to send photo: {e}")
-                await query.edit_message_text(text="Не вдалося опублікувати зображення.")
-    elif query.data == 'reject':
-        image_url, published_at, characters = get_random_image()
-        if image_url:
-            keyboard = [
-                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-                [InlineKeyboardButton("Відхилити", callback_data='reject')]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            # Формуємо текст опису зображення з додаванням часу публікації та персонажів
-            caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {characters if characters else 'Немає персонажів'}"
-            
-            context.user_data['current_image'] = image_url
-            context.user_data['current_caption'] = caption
-            try:
-                await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption), reply_markup=reply_markup)
-            except Exception as e:
-                logger.error(f"Failed to edit message media: {e}")
                 try:
-                    await query.edit_message_text(text='Не вдалося отримати зображення. Спробуйте ще раз.')
-                except Exception as e2:
-                    logger.error(f"Failed to edit message text: {e2}")
+                    await query.edit_message_text(text="Не вдалося опублікувати зображення.")
+                except Exception as e:
+                    logger.error(f"Failed to edit message text: {e}")
+    elif query.data == 'reject':
+        max_retries = 5
+        for attempt in range(max_retries):
+            image_url, published_at, characters = get_random_image()
+            if image_url:
+                keyboard = [
+                    [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                    [InlineKeyboardButton("Відхилити", callback_data='reject')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                
+                # Формуємо текст опису зображення з додаванням часу публікації та персонажів
+                caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {characters if characters else 'Немає персонажів'}"
+                
+                context.user_data['current_image'] = image_url
+                context.user_data['current_caption'] = caption
+                try:
+                    await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption), reply_markup=reply_markup)
+                    break
+                except Exception as e:
+                    logger.error(f"Failed to edit message media (attempt {attempt+1}/{max_retries}): {e}")
+                    time.sleep(1)  # Затримка перед повторною спробою
+            else:
+                logger.error(f"Failed to get image (attempt {attempt+1}/{max_retries})")
+                time.sleep(1)  # Затримка перед повторною спробою
         else:
             try:
                 await query.edit_message_text(text='Не вдалося отримати зображення. Спробуйте ще раз.')
