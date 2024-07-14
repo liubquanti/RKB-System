@@ -31,16 +31,16 @@ def get_random_image():
         image_data = data[0]
         image_url = image_data.get('file_url')
         if not is_image_accessible(image_url):
-            return None, None, None
+            return None, None, None, None
         published_at = image_data.get('created_at')
         tag_string_character = image_data.get('tag_string_character', '')
         characters = tag_string_character.replace(' ', ', ')
-        return image_url, published_at, characters
-    return None, None, None
+        copyright_info = image_data.get('tag_string_copyright', '')
+        return image_url, published_at, characters, copyright_info
+    return None, None, None, None
 
 # Функція для очищення імен персонажів
 def clean_character_name(name):
-    # Видаляємо текст в дужках разом з дужками та зайве нижнє підкреслення перед дужками
     return re.sub(r'_?\([^)]*\)', '', name)
 
 # Команда /start
@@ -49,7 +49,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
-    image_url, published_at, characters = get_random_image()
+    image_url, published_at, characters, copyright_info = get_random_image()
     if image_url:
         keyboard = [
             [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
@@ -57,10 +57,18 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Формуємо текст опису зображення з додаванням часу публікації та персонажів у вигляді хеш-тегів
-        cleaned_characters = ', '.join([clean_character_name(char) for char in characters.split(', ')])
-        hashtags = ' '.join([f"#{char}" for char in cleaned_characters.split(', ')])
-        caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {hashtags if hashtags else 'Немає персонажів'}"
+        cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
+        character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
+        
+        cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
+        copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+        
+        hashtags = character_hashtags + ' ' + copyright_hashtags
+        
+        caption = (
+            f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Теги: {hashtags if hashtags else 'Немає тегів'}"
+        )
         
         context.user_data['current_image'] = image_url
         context.user_data['current_caption'] = caption
@@ -91,7 +99,7 @@ async def button(update: Update, context: CallbackContext) -> None:
     elif query.data == 'reject':
         max_retries = 5
         for attempt in range(max_retries):
-            image_url, published_at, characters = get_random_image()
+            image_url, published_at, characters, copyright_info = get_random_image()
             if image_url:
                 keyboard = [
                     [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
@@ -99,10 +107,18 @@ async def button(update: Update, context: CallbackContext) -> None:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # Формуємо текст опису зображення з додаванням часу публікації та персонажів у вигляді хеш-тегів
-                cleaned_characters = ', '.join([clean_character_name(char) for char in characters.split(', ')])
-                hashtags = ' '.join([f"#{char}" for char in cleaned_characters.split(', ')])
-                caption = f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\nПерсонажі: {hashtags if hashtags else 'Немає персонажів'}"
+                cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
+                character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
+                
+                cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
+                copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+                
+                hashtags = character_hashtags + ' ' + copyright_hashtags
+                
+                caption = (
+                    f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"Теги: {hashtags if hashtags else 'Немає тегів'}"
+                )
                 
                 context.user_data['current_image'] = image_url
                 context.user_data['current_caption'] = caption
