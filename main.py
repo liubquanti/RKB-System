@@ -49,9 +49,11 @@ def get_random_image():
                     characters = tag_string_character.replace(' ', ', ')
                     copyright_info = image_data.get('tag_string_copyright', '')
                     rating = image_data.get('rating', '')
-                    return image_url, published_at, characters, copyright_info, rating
+                    tag_string_general = image_data.get('tag_string_general', '')
+                    post_id = image_data.get('id')
+                    return image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id
 
-    return None, None, None, None, None
+    return None, None, None, None, None, None, None
 
 # Функція для очищення імен персонажів
 def clean_character_name(name):
@@ -74,7 +76,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
-    image_url, published_at, characters, copyright_info, rating = get_random_image()
+    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id = get_random_image()
     if image_url:
         keyboard = [
             [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
@@ -88,13 +90,20 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
         copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
         
-        hashtags = character_hashtags + ' ' + copyright_hashtags
+        hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
         channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags
         
+        post_url = f"https://danbooru.donmai.us/posts/{post_id}"
+
         caption = (
-            f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"Теги: {hashtags if hashtags else 'Немає тегів'}\n"
-            f"Рейтинг: {rating}"
+            f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
+            f"Рейт: {rating}\n"
+            f"{post_url}"
+            
+        )
+        channel_caption = (
+            f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
         )
         channel_caption = (
             f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
@@ -131,7 +140,7 @@ async def button(update: Update, context: CallbackContext) -> None:
     elif query.data == 'reject':
         max_retries = 5
         for attempt in range(max_retries):
-            image_url, published_at, characters, copyright_info, rating = get_random_image()
+            image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id = get_random_image()
             if image_url:
                 keyboard = [
                     [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
@@ -145,13 +154,16 @@ async def button(update: Update, context: CallbackContext) -> None:
                 cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
                 copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
                 
-                hashtags = character_hashtags + ' ' + copyright_hashtags
+                hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
                 channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags
                 
+                post_url = f"https://danbooru.donmai.us/posts/{post_id}"
+
                 caption = (
-                    f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"Теги: {hashtags if hashtags else 'Немає тегів'}\n"
-                    f"Рейтинг: {rating}"
+                    f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
+                    f"Рейт: {rating}\n"
+                    f"{post_url}"
                 )
                 channel_caption = (
                     f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
