@@ -93,9 +93,13 @@ async def get_image(update: Update, context: CallbackContext) -> None:
             f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"Теги: {hashtags if hashtags else 'Немає тегів'}"
         )
+        channel_caption = (
+            f"Теги: {hashtags if hashtags else 'Немає тегів'}"
+        )
         
         context.user_data['current_image'] = image_url
         context.user_data['current_caption'] = caption
+        context.user_data['current_channel_caption'] = channel_caption
         await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup)
     else:
         await update.message.reply_text('Не вдалося отримати зображення. Спробуйте ще раз.')
@@ -107,9 +111,10 @@ async def button(update: Update, context: CallbackContext) -> None:
     if query.data == 'confirm':
         image_url = context.user_data.get('current_image')
         caption = context.user_data.get('current_caption')
+        channel_caption = context.user_data.get('current_channel_caption')
         if image_url:
             try:
-                await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
+                await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption)
                 try:
                     await query.edit_message_text(text="Зображення підтверджено та опубліковано.")
                 except Exception as e:
@@ -143,9 +148,13 @@ async def button(update: Update, context: CallbackContext) -> None:
                     f"Час публікації: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
                     f"Теги: {hashtags if hashtags else 'Немає тегів'}"
                 )
+                channel_caption = (
+                    f"Теги: {hashtags if hashtags else 'Немає тегів'}"
+                )
                 
                 context.user_data['current_image'] = image_url
                 context.user_data['current_caption'] = caption
+                context.user_data['current_channel_caption'] = channel_caption
                 try:
                     await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption), reply_markup=reply_markup)
                     break
