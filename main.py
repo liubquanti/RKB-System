@@ -89,9 +89,18 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         
         cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
         copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+
+        if rating == 'g':
+            rating = '🟢  •  #general'
+        elif rating == 's':
+            rating = '🟡  •  #sensetive'
+        elif rating == 'q':
+            rating = '🟠  •  #questionable'
+        elif rating == 'e':
+            rating = '🔴  •  #explicit'
         
         hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags
+        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating
         
         post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -153,9 +162,18 @@ async def button(update: Update, context: CallbackContext) -> None:
                 
                 cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
                 copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+
+                if rating == 'g':
+                    rating = '🟢  •  #general'
+                elif rating == 's':
+                    rating = '🟡  •  #sensetive'
+                elif rating == 'q':
+                    rating = '🟠  •  #questioable'
+                elif rating == 'e':
+                    rating = '🔴  •  #explicit'
                 
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags
+                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating
                 
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
