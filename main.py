@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMe
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 import requests
 from datetime import datetime
-from config import TOKEN, CHANNEL_ID
+from config import TOKEN, CHANNEL_ID, GROUP_ID
 from tags import tags  # Імпорт тегів з файлу tags.py
 from banned import banned_tags
 import random
@@ -51,9 +51,10 @@ def get_random_image():
                     rating = image_data.get('rating', '')
                     tag_string_general = image_data.get('tag_string_general', '')
                     post_id = image_data.get('id')
-                    return image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id
+                    artist = image_data.get('tag_string_artist', '')
+                    return image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist
 
-    return None, None, None, None, None, None, None
+    return None, None, None, None, None, None, None, None
 
 # Функція для очищення імен персонажів
 def clean_character_name(name):
@@ -76,7 +77,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
-    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id = get_random_image()
+    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
     if image_url:
         keyboard = [
             [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
@@ -100,12 +101,15 @@ async def get_image(update: Update, context: CallbackContext) -> None:
             rating = '🔴  •  #explicit'
         
         hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating
+        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating + '\n🪶  •  #' + artist
         
         post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
+        re.sub(r'_?\([^)]*\)', '', artist)
+
         caption = (
             f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Арт: #{artist}\n"
             f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
             f"Рейт: {rating}\n"
             f"{post_url}"
@@ -137,7 +141,18 @@ async def button(update: Update, context: CallbackContext) -> None:
             try:
                 await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption)
                 try:
-                    await query.edit_message_text(text="Зображення підтверджено та опубліковано.")
+                    keyboard = [
+                        [InlineKeyboardButton(f"Опублікувано!", callback_data='reject')]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    await query.edit_message_reply_markup(reply_markup=reply_markup)
+                    time.sleep(1)
+                    keyboard = [
+                        [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                        [InlineKeyboardButton("Відхилити", callback_data='reject')]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    await query.edit_message_reply_markup(reply_markup=reply_markup)
                 except Exception as e:
                     logger.error(f"Failed to edit message text: {e}")
             except Exception as e:
@@ -149,7 +164,7 @@ async def button(update: Update, context: CallbackContext) -> None:
     elif query.data == 'reject':
         max_retries = 5
         for attempt in range(max_retries):
-            image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id = get_random_image()
+            image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
             if image_url:
                 keyboard = [
                     [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
@@ -173,12 +188,15 @@ async def button(update: Update, context: CallbackContext) -> None:
                     rating = '🔴  •  #explicit'
                 
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating
+                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating + '\n🪶  •  #' + artist
                 
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
+                re.sub(r'_?\([^)]*\)', '', artist)
+
                 caption = (
                     f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"Арт: #{artist}\n"
                     f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
                     f"Рейт: {rating}\n"
                     f"{post_url}"
@@ -195,13 +213,37 @@ async def button(update: Update, context: CallbackContext) -> None:
                     break
                 except Exception as e:
                     logger.error(f"Failed to edit message media (attempt {attempt+1}/{max_retries}): {e}")
-                    time.sleep(1)  # Затримка перед повторною спробою
+                    keyboard = [
+                        [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='reject')]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    try:
+                        await query.edit_message_reply_markup(reply_markup=reply_markup)
+                    except Exception as e:
+                        logger.error(f"Failed to edit message reply markup (attempt {attempt+1}/{max_retries}): {e}")
+                        keyboard = [
+                            [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='reject')]
+                        ]
+                        reply_markup = InlineKeyboardMarkup(keyboard)
+                        await query.edit_message_reply_markup(reply_markup=reply_markup)
+                      
+                    time.sleep(1)
             else:
                 logger.error(f"Failed to get image (attempt {attempt+1}/{max_retries})")
-                time.sleep(1)  # Затримка перед повторною спробою
+                keyboard = [
+                    [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='reject')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await query.edit_message_reply_markup(reply_markup=reply_markup)
+                time.sleep(1)
         else:
             try:
-                await query.edit_message_text(text='Не вдалося отримати зображення. Спробуйте ще раз.')
+                keyboard = [
+                    [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                    [InlineKeyboardButton(f"Помилка\n(спробувати ще раз)", callback_data='reject')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await query.edit_message_reply_markup(reply_markup=reply_markup)
             except Exception as e:
                 logger.error(f"Failed to edit message text: {e}")
 
