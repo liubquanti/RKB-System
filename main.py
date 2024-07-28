@@ -10,6 +10,7 @@ from tags import tags  # Імпорт тегів з файлу tags.py
 from banned import banned_tags
 import random
 import time
+import asyncio
 
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -75,6 +76,14 @@ def update_banned_tags_file():
         for tag in banned_tags:
             file.write(f'    "{tag}",\n')
         file.write(']\n')
+
+# Функція для видалення повідомлення через затримку
+async def delete_message_later(context: CallbackContext, message_id: int, chat_id: int, delay: int = 1):
+    await asyncio.sleep(delay)
+    try:
+        await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+    except Exception as e:
+        logger.error(f"Error deleting message: {e}")
 
 # Команда /start
 async def start(update: Update, context: CallbackContext) -> None:
@@ -262,11 +271,15 @@ async def add_tag(update: Update, context: CallbackContext) -> None:
         if tag not in tags:
             tags.append(tag)
             update_tags_file()
-            await update.message.reply_text(f'Tег "{tag}" успішно додано.')
+            response = await update.message.reply_text(f'Tег "{tag}" успішно додано.')
         else:
-            await update.message.reply_text(f'Tег "{tag}" вже існує.')
+            response = await update.message.reply_text(f'Tег "{tag}" вже існує.')
     else:
-        await update.message.reply_text('Будь ласка, вкажіть тег для додавання.')
+        response = await update.message.reply_text('Будь ласка, вкажіть тег для додавання.')
+
+    # Видалити повідомлення користувача та відповідь через 2 секунди
+    await delete_message_later(context, update.message.message_id, update.message.chat_id)
+    await delete_message_later(context, response.message_id, response.chat_id)
 
 # Команда /remove_tag
 async def remove_tag(update: Update, context: CallbackContext) -> None:
@@ -275,11 +288,22 @@ async def remove_tag(update: Update, context: CallbackContext) -> None:
         if tag in tags:
             tags.remove(tag)
             update_tags_file()
-            await update.message.reply_text(f'Tег "{tag}" успішно видалено.')
+            response = await update.message.reply_text(f'Tег "{tag}" успішно видалено.')
         else:
-            await update.message.reply_text(f'Tег "{tag}" не знайдено.')
+            response = await update.message.reply_text(f'Tег "{tag}" не знайдено.')
     else:
-        await update.message.reply_text('Будь ласка, вкажіть тег для видалення.')
+        response = await update.message.reply_text('Будь ласка, вкажіть тег для видалення.')
+
+    # Видалити повідомлення користувача та відповідь через 2 секунди
+    await delete_message_later(context, update.message.message_id, update.message.chat_id)
+    await delete_message_later(context, response.message_id, response.chat_id)
+
+# Команда /list_tags
+async def list_tags(update: Update, context: CallbackContext) -> None:
+    if tags:
+        await update.message.reply_text('Список тегів:\n' + '\n'.join(tags))
+    else:
+        await update.message.reply_text('Список тегів порожній.')
 
 # Команда /block_tag
 async def block_tag(update: Update, context: CallbackContext) -> None:
@@ -288,11 +312,15 @@ async def block_tag(update: Update, context: CallbackContext) -> None:
         if tag not in banned_tags:
             banned_tags.append(tag)
             update_banned_tags_file()
-            await update.message.reply_text(f'Tег "{tag}" успішно заблоковано.')
+            response = await update.message.reply_text(f'Tег "{tag}" успішно заблоковано.')
         else:
-            await update.message.reply_text(f'Tег "{tag}" вже заблоковано.')
+            response = await update.message.reply_text(f'Tег "{tag}" вже заблоковано.')
     else:
-        await update.message.reply_text('Будь ласка, вкажіть тег для блокування.')
+        response = await update.message.reply_text('Будь ласка, вкажіть тег для блокування.')
+
+    # Видалити повідомлення користувача та відповідь через 2 секунди
+    await delete_message_later(context, update.message.message_id, update.message.chat_id)
+    await delete_message_later(context, response.message_id, response.chat_id)
 
 # Команда /unblock_tag
 async def unblock_tag(update: Update, context: CallbackContext) -> None:
@@ -301,18 +329,15 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
         if tag in banned_tags:
             banned_tags.remove(tag)
             update_banned_tags_file()
-            await update.message.reply_text(f'Tег "{tag}" успішно розблоковано.')
+            response = await update.message.reply_text(f'Tег "{tag}" успішно розблоковано.')
         else:
-            await update.message.reply_text(f'Tег "{tag}" не знайдено серед заблокованих.')
+            response = await update.message.reply_text(f'Tег "{tag}" не знайдено серед заблокованих.')
     else:
-        await update.message.reply_text('Будь ласка, вкажіть тег для розблокування.')
+        response = await update.message.reply_text('Будь ласка, вкажіть тег для розблокування.')
 
-# Команда /list_tags
-async def list_tags(update: Update, context: CallbackContext) -> None:
-    if tags:
-        await update.message.reply_text('Список тегів:\n' + '\n'.join(tags))
-    else:
-        await update.message.reply_text('Список тегів порожній.')
+    # Видалити повідомлення користувача та відповідь через 2 секунди
+    await delete_message_later(context, update.message.message_id, update.message.chat_id)
+    await delete_message_later(context, response.message_id, response.chat_id)
 
 # Основна функція
 def main() -> None:
