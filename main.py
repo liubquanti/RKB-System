@@ -16,6 +16,9 @@ import asyncio
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ID користувача, який має доступ до команд
+ALLOWED_USER_ID = 928139558
+
 # Функція для перевірки доступності зображення
 def is_image_accessible(url):
     try:
@@ -85,8 +88,14 @@ async def delete_message_later(context: CallbackContext, message_id: int, chat_i
     except Exception as e:
         logger.error(f"Error deleting message: {e}")
 
+# Перевірка дозволу доступу
+def is_user_allowed(update: Update) -> bool:
+    return update.effective_user.id == ALLOWED_USER_ID
+
 # Команда /start
 async def start(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     await update.message.reply_text('Вітаю! Надішліть команду /get_image для отримання випадкового зображення.\n'
                                     'Для додавання тегу використайте команду /add_tag <tag>.\n'
                                     'Для видалення тегу використайте команду /remove_tag <tag>.\n'
@@ -94,6 +103,8 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
     if image_url:
         keyboard = [
@@ -266,6 +277,8 @@ async def button(update: Update, context: CallbackContext) -> None:
 
 # Команда /add_tag
 async def add_tag(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     tag = ' '.join(context.args)
     if tag:
         if tag not in tags:
@@ -283,6 +296,8 @@ async def add_tag(update: Update, context: CallbackContext) -> None:
 
 # Команда /remove_tag
 async def remove_tag(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     tag = ' '.join(context.args)
     if tag:
         if tag in tags:
@@ -300,6 +315,8 @@ async def remove_tag(update: Update, context: CallbackContext) -> None:
 
 # Команда /list_tags
 async def list_tags(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     if tags:
         await update.message.reply_text('Список тегів:\n' + '\n'.join(tags))
     else:
@@ -307,6 +324,8 @@ async def list_tags(update: Update, context: CallbackContext) -> None:
 
 # Команда /block_tag
 async def block_tag(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     tag = ' '.join(context.args)
     if tag:
         if tag not in banned_tags:
@@ -324,6 +343,8 @@ async def block_tag(update: Update, context: CallbackContext) -> None:
 
 # Команда /unblock_tag
 async def unblock_tag(update: Update, context: CallbackContext) -> None:
+    if not is_user_allowed(update):
+        return
     tag = ' '.join(context.args)
     if tag:
         if tag in banned_tags:
