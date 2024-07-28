@@ -68,6 +68,14 @@ def update_tags_file():
             file.write(f'    "{tag}",\n')
         file.write("]\n")
 
+# Функція для оновлення файлу banned.py
+def update_banned_tags_file():
+    with open('banned.py', 'w') as file:
+        file.write('banned_tags = [\n')
+        for tag in banned_tags:
+            file.write(f'    "{tag}",\n')
+        file.write(']\n')
+
 # Команда /start
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text('Вітаю! Надішліть команду /get_image для отримання випадкового зображення.\n'
@@ -273,6 +281,32 @@ async def remove_tag(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text('Будь ласка, вкажіть тег для видалення.')
 
+# Команда /block_tag
+async def block_tag(update: Update, context: CallbackContext) -> None:
+    tag = ' '.join(context.args)
+    if tag:
+        if tag not in banned_tags:
+            banned_tags.append(tag)
+            update_banned_tags_file()
+            await update.message.reply_text(f'Tег "{tag}" успішно заблоковано.')
+        else:
+            await update.message.reply_text(f'Tег "{tag}" вже заблоковано.')
+    else:
+        await update.message.reply_text('Будь ласка, вкажіть тег для блокування.')
+
+# Команда /unblock_tag
+async def unblock_tag(update: Update, context: CallbackContext) -> None:
+    tag = ' '.join(context.args)
+    if tag:
+        if tag in banned_tags:
+            banned_tags.remove(tag)
+            update_banned_tags_file()
+            await update.message.reply_text(f'Tег "{tag}" успішно розблоковано.')
+        else:
+            await update.message.reply_text(f'Tег "{tag}" не знайдено серед заблокованих.')
+    else:
+        await update.message.reply_text('Будь ласка, вкажіть тег для розблокування.')
+
 # Команда /list_tags
 async def list_tags(update: Update, context: CallbackContext) -> None:
     if tags:
@@ -288,6 +322,8 @@ def main() -> None:
     application.add_handler(CommandHandler("get_image", get_image))
     application.add_handler(CommandHandler("add_tag", add_tag))
     application.add_handler(CommandHandler("remove_tag", remove_tag))
+    application.add_handler(CommandHandler("block_tag", block_tag))
+    application.add_handler(CommandHandler("unblock_tag", unblock_tag))
     application.add_handler(CommandHandler("list_tags", list_tags))
     application.add_handler(CallbackQueryHandler(button))
 
