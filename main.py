@@ -29,8 +29,8 @@ def is_image_accessible(url):
 
 # Функція для отримання випадкового зображення з Danbooru з врахуванням всіх тегів
 def get_random_image():
-    all_tags = ' '.join(tags)  # Об'єднати всі теги в один рядок
-    url = f"https://danbooru.donmai.us/posts.json?tags={all_tags}&random=true"
+    random_tag = random.choice(tags)
+    url = f"https://danbooru.donmai.us/posts.json?tags={random_tag}&random=true"
     
     for _ in range(10):  # Максимум 10 спроб знайти зображення без забанених тегів
         response = requests.get(url)
