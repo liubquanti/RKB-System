@@ -242,7 +242,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                 except Exception as e:
                     logger.error(f"Failed to edit message media (attempt {attempt+1}/{max_retries}): {e}")
                     keyboard = [
-                        [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='reject')]
+                        [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='wait')]
                     ]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     try:
@@ -250,7 +250,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     except Exception as e:
                         logger.error(f"Failed to edit message reply markup (attempt {attempt+1}/{max_retries}): {e}")
                         keyboard = [
-                            [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='reject')]
+                            [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='wait')]
                         ]
                         reply_markup = InlineKeyboardMarkup(keyboard)
                         await query.edit_message_reply_markup(reply_markup=reply_markup)
@@ -259,7 +259,7 @@ async def button(update: Update, context: CallbackContext) -> None:
             else:
                 logger.error(f"Failed to get image (attempt {attempt+1}/{max_retries})")
                 keyboard = [
-                    [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='reject')]
+                    [InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='wait')]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_reply_markup(reply_markup=reply_markup)
