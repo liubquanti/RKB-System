@@ -42,9 +42,13 @@ def get_random_image():
             for image_data in data:
                 image_url = image_data.get('file_url')
                 tag_string = image_data.get('tag_string', '')
+                rating = image_data.get('rating', '')
 
                 # Перевірити, чи містить тег забанені теги
                 if any(banned_tag in tag_string for banned_tag in banned_tags):
+                    continue
+
+                if rating == 'g' or rating == 'e':
                     continue
 
                 if is_image_accessible(image_url):
@@ -129,7 +133,8 @@ async def get_image(update: Update, context: CallbackContext) -> None:
             rating = '🔴  •  #explicit'
         
         hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating + '\n🪶  •  #' + artist
+        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n🪶  •  #' + artist
+        #  '\n' + rating + 
         
         post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -216,7 +221,8 @@ async def button(update: Update, context: CallbackContext) -> None:
                     rating = '🔴  •  #explicit'
                 
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n' + rating + '\n🪶  •  #' + artist
+                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n🪶  •  #' + artist
+                # '\n' + rating + 
                 
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
