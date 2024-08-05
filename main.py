@@ -1,17 +1,16 @@
 import logging
 import re
 import os
-import random
-import requests
-import time
-import schedule
-import asyncio
-from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
+import requests
+from datetime import datetime
 from config import TOKEN, CHANNEL_ID, GROUP_ID
 from tags import tags  # Імпорт тегів з файлу tags.py
 from banned import banned_tags
+import random
+import time
+import asyncio
 
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -367,24 +366,6 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
     await delete_message_later(context, update.message.message_id, update.message.chat_id)
     await delete_message_later(context, response.message_id, response.chat_id)
 
-async def post_random_image(context: CallbackContext):
-    image_url = get_random_image()
-    if image_url:
-        await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url)
-    else:
-        logger.warning("Не вдалося знайти зображення для публікації.")
-
-def schedule_random_minute_task():
-    # Вибрати випадкову хвилину для виконання завдання
-    random_minute = random.randint(0, 59)
-    schedule.every().hour.at(f":{random_minute:02d}").do(asyncio.run, post_random_image)
-    logger.info(f"Scheduled task for random minute {random_minute} of every hour.")
-
-def run_scheduler():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
 # Основна функція
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
@@ -400,10 +381,6 @@ def main() -> None:
 
     # Реєстрація обробника помилок
     application.add_error_handler(error_handler)
-
-    # Запланувати завдання
-    schedule_random_minute_task()
-    asyncio.get_event_loop().run_in_executor(None, run_scheduler)
 
     application.run_polling()
 
