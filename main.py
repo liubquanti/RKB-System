@@ -4,13 +4,15 @@ import os
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import TOKEN, CHANNEL_ID, GROUP_ID
 from tags import tags  # Імпорт тегів з файлу tags.py
 from banned import banned_tags
 import random
 import time
 import asyncio
+import schedule
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -104,6 +106,71 @@ async def start(update: Update, context: CallbackContext) -> None:
                                     'Для додавання тегу використайте команду /add_tag <tag>.\n'
                                     'Для видалення тегу використайте команду /remove_tag <tag>.\n'
                                     'Для перегляду всіх тегів використайте команду /list_tags.')
+    
+# Функція для публікації зображення
+async def publish_image(application: Application) -> None:
+    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
+    if image_url:
+        cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
+        character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
+        
+        cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
+        copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+
+        if rating == 'g':
+            rating = '🟢  •  #general'
+        elif rating == 's':
+            rating = '🟡  •  #sensitive'
+        elif rating == 'q':
+            rating = '🟠  •  #questionable'
+        elif rating == 'e':
+            rating = '🔴  •  #explicit'
+        
+        hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
+        channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n🪶  •  #' + artist
+        
+        post_url = f"https://danbooru.donmai.us/posts/{post_id}"
+        re.sub(r'_?\([^)]*\)', '', artist)
+
+        caption = (
+            f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Арт: #{artist}\n"
+            f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
+            f"Рейт: {rating}\n"
+            f"{post_url}"
+        )
+        channel_caption = (
+            f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
+        )
+
+        try:
+            await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption)
+            logger.info("Image published successfully")
+        except Exception as e:
+            logger.error(f"Failed to send photo: {e}")
+    else:
+        logger.error('Failed to get image')
+
+    # Schedule the next job
+    schedule_next_job(application)
+
+# Функція для планування наступного запуску
+def schedule_next_job(application: Application) -> None:
+    scheduler = application.job_queue.scheduler
+    # Вибираємо випадкову хвилину
+    random_minute = random.randint(0, 59)
+    now = datetime.now()
+    next_run_time = (now + timedelta(hours=1)).replace(minute=random_minute, second=0, microsecond=0)
+    logger.info(f"Next image will be published at {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,))
+
+
+# Налаштування планувальника
+def start_scheduler(application: Application) -> None:
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    # Плануємо перший запуск
+    schedule_next_job(application)
 
 # Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
@@ -366,11 +433,12 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
     await delete_message_later(context, update.message.message_id, update.message.chat_id)
     await delete_message_later(context, response.message_id, response.chat_id)
 
+
 # Основна функція
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
-    application.add_handler(CommandHandler("start",start))
+    application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("get_image", get_image))
     application.add_handler(CommandHandler("add_tag", add_tag))
     application.add_handler(CommandHandler("remove_tag", remove_tag))
@@ -381,6 +449,9 @@ def main() -> None:
 
     # Реєстрація обробника помилок
     application.add_error_handler(error_handler)
+
+    # Запуск планувальника
+    start_scheduler(application)
 
     application.run_polling()
 
