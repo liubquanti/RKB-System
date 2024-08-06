@@ -164,10 +164,10 @@ def schedule_next_job(application: Application) -> None:
     logger.info(f"Next image will be published at {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}")
     scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,))
 
-
 # Налаштування планувальника
 def start_scheduler(application: Application) -> None:
     scheduler = AsyncIOScheduler()
+    application.job_queue.scheduler = scheduler
     scheduler.start()
     # Плануємо перший запуск
     schedule_next_job(application)
