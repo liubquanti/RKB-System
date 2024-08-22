@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Call
 import requests
 from datetime import datetime, timedelta
 from config import TOKEN, CHANNEL_ID, GROUP_ID
-from tags import tags  # Імпорт тегів з файлу tags.py
+from tags import tags
 from banned import banned_tags
 import random
 import time
