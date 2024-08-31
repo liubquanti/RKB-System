@@ -100,10 +100,15 @@ def is_user_allowed(update: Update) -> bool:
 async def start(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
-    await update.message.reply_text('Вітаю! Надішліть команду /get_image для отримання випадкового зображення.\n'
-                                    'Для додавання тегу використайте команду /add_tag <tag>.\n'
-                                    'Для видалення тегу використайте команду /remove_tag <tag>.\n'
-                                    'Для перегляду всіх тегів використайте команду /list_tags.')
+    await update.message.reply_text('Вітаю в системі RKB!\n'
+                                    '\n'
+                                    'Знайти арт: /get_image.\n'
+                                    '\n'
+                                    'Додати тег: /add_tag <tag>.\n'
+                                    'Видалити тег: /remove_tag <tag>.\n'
+                                    'Заблокувати тег: /block_tag <tag>.\n'
+                                    'Розблокувати тег: /unblock_tag <tag>.\n'
+                                    'Всі теги: /list_tags.')
     
 # Функція для публікації зображення
 async def publish_image(application: Application) -> None:
