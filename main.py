@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMe
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 import requests
 from datetime import datetime, timedelta
-from config import TOKEN, CHANNEL_ID, GROUP_ID
+from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID
 from tags import tags
 from banned import banned_tags
 import random
@@ -17,9 +17,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# ID користувача, який має доступ до команд
-ALLOWED_USER_ID = 928139558
 
 # Функція для перевірки доступності зображення
 def is_image_accessible(url):
