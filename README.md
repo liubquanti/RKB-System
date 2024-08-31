@@ -13,3 +13,4 @@
 [Вікі](https://github.com/liubquanti/RKB-System/wiki) з документацією знаходиться в розробці.
 
 ## 📊 • Статистика розробки
+![Alt](https://repobeats.axiom.co/api/embed/7d8205f6669792af4403c0f059fce302ee6d56b2.svg "Repobeats analytics image")
