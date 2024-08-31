@@ -15,11 +15,9 @@ import asyncio
 import schedule
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# Встановити логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Функція для перевірки доступності зображення
 def is_image_accessible(url):
     try:
         response = requests.head(url)
@@ -27,24 +25,22 @@ def is_image_accessible(url):
     except requests.RequestException:
         return False
 
-# Функція для отримання випадкового зображення з Danbooru з врахуванням всіх тегів
 def get_random_image():
     random_tag = random.choice(tags)
     url = f"https://danbooru.donmai.us/posts.json?tags={random_tag}&random=true"
     
-    for _ in range(10):  # Максимум 10 спроб знайти зображення без забанених тегів
+    for _ in range(10):
         response = requests.get(url)
         data = response.json()
         
         if isinstance(data, list) and data:
-            random.shuffle(data)  # Перемішати результати для додаткової випадковості
+            random.shuffle(data)
             
             for image_data in data:
                 image_url = image_data.get('file_url')
                 tag_string = image_data.get('tag_string', '')
                 rating = image_data.get('rating', '')
 
-                # Перевірити, чи містить тег забанені теги
                 if any(banned_tag in tag_string for banned_tag in banned_tags):
                     continue
 
@@ -64,11 +60,9 @@ def get_random_image():
 
     return None, None, None, None, None, None, None, None
 
-# Функція для очищення імен персонажів
 def clean_character_name(name):
     return re.sub(r'_?\([^)]*\)', '', name)
 
-# Оновлення файлу tags.py
 def update_tags_file():
     with open("tags.py", "w") as file:
         file.write("tags = [\n")
@@ -76,7 +70,6 @@ def update_tags_file():
             file.write(f'    "{tag}",\n')
         file.write("]\n")
 
-# Функція для оновлення файлу banned.py
 def update_banned_tags_file():
     with open('banned.py', 'w') as file:
         file.write('banned_tags = [\n')
@@ -84,7 +77,6 @@ def update_banned_tags_file():
             file.write(f'    "{tag}",\n')
         file.write(']\n')
 
-# Функція для видалення повідомлення через затримку
 async def delete_message_later(context: CallbackContext, message_id: int, chat_id: int, delay: int = 1):
     await asyncio.sleep(delay)
     try:
@@ -92,11 +84,9 @@ async def delete_message_later(context: CallbackContext, message_id: int, chat_i
     except Exception as e:
         logger.error(f"Error deleting message: {e}")
 
-# Перевірка дозволу доступу
 def is_user_allowed(update: Update) -> bool:
     return update.effective_user.id == ALLOWED_USER_ID
 
-# Команда /start
 async def start(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -110,7 +100,6 @@ async def start(update: Update, context: CallbackContext) -> None:
                                     'Розблокувати тег: /unblock_tag <tag>.\n'
                                     'Всі теги: /list_tags.')
     
-# Функція для публікації зображення
 async def publish_image(application: Application) -> None:
     image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
     if image_url:
@@ -154,28 +143,22 @@ async def publish_image(application: Application) -> None:
     else:
         logger.error('Failed to get image')
 
-    # Schedule the next job
     schedule_next_job(application)
 
-# Функція для планування наступного запуску
 def schedule_next_job(application: Application) -> None:
     scheduler = application.job_queue.scheduler
-    # Вибираємо випадкову хвилину
     random_minute = random.randint(0, 59)
     now = datetime.now()
     next_run_time = (now + timedelta(hours=1)).replace(minute=random_minute, second=0, microsecond=0)
     logger.info(f"Next image will be published at {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}")
     scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,))
 
-# Налаштування планувальника
 def start_scheduler(application: Application) -> None:
     scheduler = AsyncIOScheduler()
     application.job_queue.scheduler = scheduler
     scheduler.start()
-    # Плануємо перший запуск
     schedule_next_job(application)
 
-# Команда /get_image
 async def get_image(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -221,7 +204,6 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         
         hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
         channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n🪶  •  #' + artist
-        #  '\n' + rating + 
         
         post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -249,7 +231,6 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text('Не вдалося отримати зображення. Спробуйте ще раз.')
 
-# Обробка натискання кнопок
 async def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     await query.answer()
@@ -343,7 +324,6 @@ async def button(update: Update, context: CallbackContext) -> None:
                 
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
                 channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n🪶  •  #' + artist
-                # '\n' + rating + 
                 
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -654,7 +634,6 @@ async def button(update: Update, context: CallbackContext) -> None:
     
 
 
-# Команда /add_tag
 async def add_tag(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -669,11 +648,9 @@ async def add_tag(update: Update, context: CallbackContext) -> None:
     else:
         response = await update.message.reply_text('Будь ласка, вкажіть тег для додавання.')
 
-    # Видалити повідомлення користувача та відповідь через 2 секунди
     await delete_message_later(context, update.message.message_id, update.message.chat_id)
     await delete_message_later(context, response.message_id, response.chat_id)
 
-# Команда /remove_tag
 async def remove_tag(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -688,11 +665,9 @@ async def remove_tag(update: Update, context: CallbackContext) -> None:
     else:
         response = await update.message.reply_text('Будь ласка, вкажіть тег для видалення.')
 
-    # Видалити повідомлення користувача та відповідь через 2 секунди
     await delete_message_later(context, update.message.message_id, update.message.chat_id)
     await delete_message_later(context, response.message_id, response.chat_id)
 
-# Команда /list_tags
 async def list_tags(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -701,7 +676,6 @@ async def list_tags(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text('Список тегів порожній.')
 
-# Команда /block_tag
 async def block_tag(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -716,11 +690,9 @@ async def block_tag(update: Update, context: CallbackContext) -> None:
     else:
         response = await update.message.reply_text('Будь ласка, вкажіть тег для блокування.')
 
-    # Видалити повідомлення користувача та відповідь через 2 секунди
     await delete_message_later(context, update.message.message_id, update.message.chat_id)
     await delete_message_later(context, response.message_id, response.chat_id)
 
-# Команда /unblock_tag
 async def unblock_tag(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -735,12 +707,11 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
     else:
         response = await update.message.reply_text('Будь ласка, вкажіть тег для розблокування.')
 
-    # Видалити повідомлення користувача та відповідь через 2 секунди
     await delete_message_later(context, update.message.message_id, update.message.chat_id)
     await delete_message_later(context, response.message_id, response.chat_id)
 
 
-# Основна функція
+
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
@@ -752,16 +723,10 @@ def main() -> None:
     application.add_handler(CommandHandler("unblock_tag", unblock_tag))
     application.add_handler(CommandHandler("list_tags", list_tags))
     application.add_handler(CallbackQueryHandler(button))
-
-    # Реєстрація обробника помилок
     application.add_error_handler(error_handler)
-
-    # Запуск планувальника
     start_scheduler(application)
-
     application.run_polling()
 
-# Обробник помилок
 async def error_handler(update: Update, context: CallbackContext) -> None:
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
