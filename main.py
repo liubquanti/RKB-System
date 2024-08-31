@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMe
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 import requests
 from datetime import datetime, timedelta
-from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID
+from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID, MODE
 from tags import tags
 from rating import rating_tags
 from banned import banned_tags
@@ -724,7 +724,8 @@ def main() -> None:
     application.add_handler(CommandHandler("list_tags", list_tags))
     application.add_handler(CallbackQueryHandler(button))
     application.add_error_handler(error_handler)
-    start_scheduler(application)
+    if MODE == 'self':
+        start_scheduler(application)
     application.run_polling()
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
