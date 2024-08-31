@@ -7,6 +7,7 @@ import requests
 from datetime import datetime, timedelta
 from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID
 from tags import tags
+from rating import rating_tags
 from banned import banned_tags
 import random
 import time
@@ -47,7 +48,7 @@ def get_random_image():
                 if any(banned_tag in tag_string for banned_tag in banned_tags):
                     continue
 
-                if rating == 'g' or rating == 'e':
+                if any(rating_tag in rating for rating_tag in rating_tags):
                     continue
 
                 if is_image_accessible(image_url):
@@ -175,9 +176,26 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         return
     image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
     if image_url:
+        if "g" in rating_tags:
+            general_state = "🔘"
+        else:
+            general_state = "🟢"
+        if "q" in rating_tags:
+            questionable_state = "🔘"
+        else:
+            questionable_state = "🟠"
+        if "s" in rating_tags:
+            sensitive_state = "🔘"
+        else:
+            sensitive_state = "🟡"
+        if "e" in rating_tags:
+            explicit_state = "🔘"
+        else:
+            explicit_state = "🔴"
         keyboard = [
             [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-            [InlineKeyboardButton("Відхилити", callback_data='reject')]
+            [InlineKeyboardButton("Відхилити", callback_data='reject')],
+            [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -244,9 +262,26 @@ async def button(update: Update, context: CallbackContext) -> None:
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     await query.edit_message_reply_markup(reply_markup=reply_markup)
                     time.sleep(1)
+                    if "g" in rating_tags:
+                        general_state = "🔘"
+                    else:
+                        general_state = "🟢"
+                    if "q" in rating_tags:
+                        questionable_state = "🔘"
+                    else:
+                        questionable_state = "🟠"
+                    if "s" in rating_tags:
+                        sensitive_state = "🔘"
+                    else:
+                        sensitive_state = "🟡"
+                    if "e" in rating_tags:
+                        explicit_state = "🔘"
+                    else:
+                        explicit_state = "🔴"
                     keyboard = [
                         [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-                        [InlineKeyboardButton("Відхилити", callback_data='reject')]
+                        [InlineKeyboardButton("Відхилити", callback_data='reject')],
+                        [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
                     ]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     await query.edit_message_reply_markup(reply_markup=reply_markup)
@@ -263,9 +298,26 @@ async def button(update: Update, context: CallbackContext) -> None:
         for attempt in range(max_retries):
             image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
             if image_url:
+                if "g" in rating_tags:
+                    general_state = "🔘"
+                else:
+                    general_state = "🟢"
+                if "q" in rating_tags:
+                    questionable_state = "🔘"
+                else:
+                    questionable_state = "🟠"
+                if "s" in rating_tags:
+                    sensitive_state = "🔘"
+                else:
+                    sensitive_state = "🟡"
+                if "e" in rating_tags:
+                    explicit_state = "🔘"
+                else:
+                    explicit_state = "🔴"
                 keyboard = [
                     [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-                    [InlineKeyboardButton("Відхилити", callback_data='reject')]
+                    [InlineKeyboardButton("Відхилити", callback_data='reject')],
+                    [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
@@ -280,7 +332,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                 elif rating == 's':
                     rating = '🟡  •  #sensetive'
                 elif rating == 'q':
-                    rating = '🟠  •  #questioable'
+                    rating = '🟠  •  #questionable'
                 elif rating == 'e':
                     rating = '🔴  •  #explicit'
                 
@@ -336,14 +388,266 @@ async def button(update: Update, context: CallbackContext) -> None:
                 time.sleep(1)
         else:
             try:
+                if "g" in rating_tags:
+                    general_state = "🔘"
+                else:
+                    general_state = "🟢"
+                if "q" in rating_tags:
+                    questionable_state = "🔘"
+                else:
+                    questionable_state = "🟠"
+                if "s" in rating_tags:
+                    sensitive_state = "🔘"
+                else:
+                    sensitive_state = "🟡"
+                if "e" in rating_tags:
+                    explicit_state = "🔘"
+                else:
+                    explicit_state = "🔴"
                 keyboard = [
                     [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-                    [InlineKeyboardButton(f"Помилка\n(спробувати ще раз)", callback_data='reject')]
+                    [InlineKeyboardButton(f"Помилка\n(спробувати ще раз)", callback_data='reject')],
+                    [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await query.edit_message_reply_markup(reply_markup=reply_markup)
             except Exception as e:
                 logger.error(f"Failed to edit message text: {e}")
+    elif query.data == 'modify_general':
+        tag_to_modify = "g"
+        if tag_to_modify in rating_tags:
+            rating_tags.remove(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+        else:
+            rating_tags.append(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+
+        with open("rating.py", "w") as file:
+            file.write("rating_tags = [\n")
+            for g in rating_tags:
+                file.write(f'    "{g}",\n')
+            file.write("]\n")
+    elif query.data == 'modify_sensetive':
+        tag_to_modify = "s"
+        if tag_to_modify in rating_tags:
+            rating_tags.remove(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+        else:
+            rating_tags.append(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+
+        with open("rating.py", "w") as file:
+            file.write("rating_tags = [\n")
+            for g in rating_tags:
+                file.write(f'    "{g}",\n')
+            file.write("]\n")
+    elif query.data == 'modify_questionable':
+        tag_to_modify = "q"
+        if tag_to_modify in rating_tags:
+            rating_tags.remove(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+        else:
+            rating_tags.append(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+
+        with open("rating.py", "w") as file:
+            file.write("rating_tags = [\n")
+            for g in rating_tags:
+                file.write(f'    "{g}",\n')
+            file.write("]\n")
+    elif query.data == 'modify_explicit':
+        tag_to_modify = "e"
+        if tag_to_modify in rating_tags:
+            rating_tags.remove(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+        else:
+            rating_tags.append(tag_to_modify)
+            if "g" in rating_tags:
+                general_state = "🔘"
+            else:
+                general_state = "🟢"
+            if "q" in rating_tags:
+                questionable_state = "🔘"
+            else:
+                questionable_state = "🟠"
+            if "s" in rating_tags:
+                sensitive_state = "🔘"
+            else:
+                sensitive_state = "🟡"
+            if "e" in rating_tags:
+                explicit_state = "🔘"
+            else:
+                explicit_state = "🔴"
+            keyboard = [
+                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
+                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
+                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_reply_markup(reply_markup=reply_markup)
+
+        with open("rating.py", "w") as file:
+            file.write("rating_tags = [\n")
+            for g in rating_tags:
+                file.write(f'    "{g}",\n')
+            file.write("]\n")
+    
+
 
 # Команда /add_tag
 async def add_tag(update: Update, context: CallbackContext) -> None:
