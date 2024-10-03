@@ -1,19 +1,19 @@
 import logging
 import re
 import os
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
-import requests
-from datetime import datetime, timedelta
-from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID
-from tags import tags
-from rating import rating_tags
-from banned import banned_tags
 import random
 import time
 import asyncio
 import schedule
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
+import requests
+from datetime import datetime, timedelta
+from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID, MODE
+from tags import tags
+from rating import rating_tags
+from banned import banned_tags
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -316,29 +316,6 @@ async def button(update: Update, context: CallbackContext) -> None:
         tag_to_modify = query.data.split('_')[1][0]
         if tag_to_modify in rating_tags:
             rating_tags.remove(tag_to_modify)
-            if "g" in rating_tags:
-                general_state = "🔘"
-            else:
-                general_state = "🟢"
-            if "q" in rating_tags:
-                questionable_state = "🔘"
-            else:
-                questionable_state = "🟠"
-            if "s" in rating_tags:
-                sensitive_state = "🔘"
-            else:
-                sensitive_state = "🟡"
-            if "e" in rating_tags:
-                explicit_state = "🔘"
-            else:
-                explicit_state = "🔴"
-            keyboard = [
-                [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-                [InlineKeyboardButton(f"Відхилити", callback_data='reject')],
-                [InlineKeyboardButton(general_state, callback_data='modify_general'), InlineKeyboardButton(sensitive_state, callback_data='modify_sensetive'), InlineKeyboardButton(questionable_state, callback_data='modify_questionable'), InlineKeyboardButton(explicit_state, callback_data='modify_explicit')],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.edit_message_reply_markup(reply_markup=reply_markup)
         else:
             rating_tags.append(tag_to_modify)
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
@@ -438,7 +415,8 @@ def main() -> None:
     application.add_handler(CommandHandler("list_tags", list_tags))
     application.add_handler(CallbackQueryHandler(button))
     application.add_error_handler(error_handler)
-    start_scheduler(application)
+    if MODE == 'self':
+        start_scheduler(application)
     application.run_polling()
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
