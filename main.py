@@ -1,10 +1,10 @@
-import logging
 import re
 import os
 import random
 import time
 import asyncio
 import schedule
+from colorama import Fore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
@@ -14,9 +14,6 @@ from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID, MODE
 from tags import tags
 from rating import rating_tags
 from banned import banned_tags
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 def is_image_accessible(url):
     try:
@@ -35,7 +32,7 @@ def get_random_image():
             response.raise_for_status()
             data = response.json()
         except (requests.RequestException, ValueError) as e:
-            logger.error(f"Error fetching image data: {e}")
+            print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
             continue
 
         if not isinstance(data, list) or not data:
@@ -90,7 +87,7 @@ async def delete_message_later(context: CallbackContext, message_id: int, chat_i
     try:
         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
     except Exception as e:
-        logger.error(f"Error deleting message: {e}")
+        print(f"{Fore.RED}[WRN] Не вдалося видалити повідомлення: {e}{Fore.RESET}")
 
 def is_user_allowed(update: Update) -> bool:
     return update.effective_user.id == ALLOWED_USER_ID
@@ -111,7 +108,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 async def publish_image(application: Application) -> None:
     image_data = get_random_image()
     if not image_data[0]:
-        logger.error('Failed to get image')
+        print(f"{Fore.RED}[WRN] Не вдалося отримати фото.{Fore.RESET}")
         return
 
     image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
@@ -124,7 +121,7 @@ async def publish_image(application: Application) -> None:
 
     rating_map = {
         'g': '🟢  •  #general',
-        's': '🟡  •  #sensitive',
+        's': '🟡  •  #sensetive',
         'q': '🟠  •  #questionable',
         'e': '🔴  •  #explicit'
     }
@@ -147,9 +144,10 @@ async def publish_image(application: Application) -> None:
 
     try:
         await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption)
-        logger.info("Image published successfully")
+        print(f"{Fore.YELLOW}[LOG] Фото успішно опублікувано.{Fore.RESET}")
     except Exception as e:
-        logger.error(f"Failed to send photo: {e}")
+        print(f"{Fore.RED}[WRN] Не вдалося відправити фото: {e}{Fore.RESET}")
+
 
     schedule_next_job(application)
 
@@ -158,7 +156,7 @@ def schedule_next_job(application: Application) -> None:
     random_minute = random.randint(0, 59)
     now = datetime.now()
     next_run_time = (now + timedelta(hours=1)).replace(minute=random_minute, second=0, microsecond=0)
-    logger.info(f"Next image will be published at {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{Fore.YELLOW}[LOG] Наступне фото буде відправлено: {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}{Fore.RESET}")
     scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,))
 
 def start_scheduler(application: Application) -> None:
@@ -258,7 +256,7 @@ async def button(update: Update, context: CallbackContext) -> None:
             await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption), reply_markup=reply_markup)
             return True
         except Exception as e:
-            logger.error(f"Failed to edit message media (attempt {attempt+1}/{max_retries}): {e}")
+            print(f"{Fore.RED}[WRN] Не вдалося отримати фото: (спроба {attempt+1}/{max_retries}) {e}{Fore.RESET}")
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton(f"Невдача!\nПочекайте! ({attempt+1}/{max_retries})", callback_data='wait')]]
             ))
@@ -274,10 +272,11 @@ async def button(update: Update, context: CallbackContext) -> None:
                 await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton(f"Опублікувано!", callback_data='reject')]]
                 ))
+                print(f"{Fore.YELLOW}[LOG] Фото опубліковано!{Fore.RESET}")
                 time.sleep(1)
                 await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
             except Exception as e:
-                logger.error(f"Failed to send photo: {e}")
+                print(f"{Fore.RED}[WRN] Не вдалося відправити фото: {e}{Fore.RESET}")
                 await query.edit_message_text(text="Не вдалося опублікувати зображення.")
     elif query.data == 'reject':
         max_retries = 5
@@ -420,7 +419,8 @@ def main() -> None:
     application.run_polling()
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
-    logger.error(msg="Exception while handling an update:", exc_info=context.error)
+    print(f"{Fore.RED}[WRN] Виняток під час обробки оновлення: {context.error}{Fore.RESET}")
 
 if __name__ == '__main__':
+    print(f"{Fore.YELLOW}[LOG] Систему RKB запущено!{Fore.RESET}")
     main()
