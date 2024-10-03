@@ -128,7 +128,7 @@ async def publish_image(application: Application) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"🎭  •  {character_hashtags}\n🌐  •  {copyright_hashtags}\n🪶  •  #{artist}"
+    channel_hashtags = f"{character_hashtags}  •  {copyright_hashtags}"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     re.sub(r'_?\([^)]*\)', '', artist)
@@ -208,7 +208,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"🎭  •  {character_hashtags}\n🌐  •  {copyright_hashtags}\n🪶  •  #{artist}"
+    channel_hashtags = f"{character_hashtags}  •  {copyright_hashtags}"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -294,7 +294,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     'e': '🔴  •  #explicit'
                 }.get(rating, rating)
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = '🎭  •  ' + character_hashtags + '\n' + '🌐  •  ' + copyright_hashtags + '\n🪶  •  #' + artist
+                channel_hashtags = f"{character_hashtags}  •  {copyright_hashtags}"
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
                 caption = (
                     f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
