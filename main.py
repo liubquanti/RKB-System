@@ -10,7 +10,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMe
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
 import requests
 from datetime import datetime, timedelta
-from config import TOKEN, CHANNEL_ID, GROUP_ID, ALLOWED_USER_ID, MODE
+from config import TOKEN, CHANNEL_ID, ALLOWED_USER_ID, MODE
 from tags import tags
 from rating import rating_tags
 from banned import banned_tags
@@ -128,7 +128,7 @@ async def publish_image(application: Application) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"{character_hashtags}  •  {copyright_hashtags}"
+    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     re.sub(r'_?\([^)]*\)', '', artist)
@@ -143,7 +143,7 @@ async def publish_image(application: Application) -> None:
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
     try:
-        await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption)
+        await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
         print(f"{Fore.YELLOW}[LOG] Фото успішно опублікувано.{Fore.RESET}")
     except Exception as e:
         print(f"{Fore.RED}[WRN] Не вдалося відправити фото: {e}{Fore.RESET}")
@@ -208,7 +208,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"{character_hashtags}  •  {copyright_hashtags}"
+    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -225,7 +225,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     context.user_data['current_caption'] = caption
     context.user_data['current_channel_caption'] = channel_caption
 
-    await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup)
+    await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup, parse_mode='HTML')
 
 async def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
@@ -268,7 +268,7 @@ async def button(update: Update, context: CallbackContext) -> None:
         channel_caption = context.user_data.get('current_channel_caption')
         if image_url:
             try:
-                await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption)
+                await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
                 await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton(f"Опублікувано!", callback_data='reject')]]
                 ))
@@ -294,7 +294,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     'e': '🔴  •  #explicit'
                 }.get(rating, rating)
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = f"{character_hashtags}  •  {copyright_hashtags}"
+                channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
                 caption = (
                     f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
