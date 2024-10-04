@@ -186,6 +186,8 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
         [InlineKeyboardButton("Відхилити", callback_data='reject')],
+        [InlineKeyboardButton("🎭", callback_data='block_character'),
+         InlineKeyboardButton("🪶", callback_data='block_author')],
         [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'),
          InlineKeyboardButton(rating_states["s"], callback_data='modify_sensetive'),
          InlineKeyboardButton(rating_states["q"], callback_data='modify_questionable'),
@@ -245,6 +247,8 @@ async def button(update: Update, context: CallbackContext) -> None:
         return [
             [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
             [InlineKeyboardButton("Відхилити", callback_data='reject')],
+            [InlineKeyboardButton("🎭", callback_data='block_character'),
+             InlineKeyboardButton("🪶", callback_data='block_author')],
             [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'), 
              InlineKeyboardButton(rating_states["s"], callback_data='modify_sensetive'), 
              InlineKeyboardButton(rating_states["q"], callback_data='modify_questionable'), 
@@ -311,6 +315,26 @@ async def button(update: Update, context: CallbackContext) -> None:
                     break
         else:
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
+    elif query.data == 'block_character':
+        characters = context.user_data.get('current_caption').split('\n')[2].replace('Перс: ', '').split(' ')
+        characters = [char.replace('#', '') for char in characters if char]
+
+        if characters:
+            character_buttons = [[InlineKeyboardButton(char, callback_data=f'ban_{char}')] for char in characters]
+            character_buttons.append([InlineKeyboardButton("Відмінити", callback_data='cancel')])
+            await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(character_buttons))
+        else:
+            await query.message.reply_text('Немає персонажів для блокування.')
+    elif query.data.startswith('ban_'):
+        char_to_ban = query.data.split('_', 1)[1]
+        if char_to_ban and char_to_ban not in banned_tags:
+            banned_tags.append(char_to_ban)
+            update_banned_tags_file()
+            response = await query.message.reply_text(f'Персонаж "{char_to_ban}" успішно заблоковано.')
+            await delete_message_later(context, response.message_id, response.chat_id, delay=1)
+        await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
+    elif query.data == 'cancel':
+        await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
     elif query.data.startswith('modify_'):
         tag_to_modify = query.data.split('_')[1][0]
         if tag_to_modify in rating_tags:
@@ -323,6 +347,14 @@ async def button(update: Update, context: CallbackContext) -> None:
             for g in rating_tags:
                 file.write(f'    "{g}",\n')
             file.write("]\n")
+    elif query.data == 'block_author':
+        author = context.user_data.get('current_caption').split('\n')[1].replace('Арт: #', '')
+        if author:
+            banned_tags.append(author)
+            update_banned_tags_file()
+            response = await query.message.reply_text(f'Автор "{author}" успішно заблоковано.')
+            await delete_message_later(context, response.message_id, response.chat_id, delay=1)
+        await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
 
 async def add_tag(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
