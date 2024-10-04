@@ -110,6 +110,20 @@ async def start(update: Update, context: CallbackContext) -> None:
                 print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
     if not is_user_allowed(update):
         return
+    args = context.args
+    if args:
+        post_id = args[0]
+        url = f"https://danbooru.donmai.us/posts/{post_id}.json"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            image_url = data.get('file_url')
+            if image_url and is_image_accessible(image_url):
+                await update.message.reply_document(document=image_url)
+                return
+        except (requests.RequestException, ValueError) as e:
+            print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
     await update.message.reply_text('Вітаю в системі RKB!\n'
                                     '\n'
                                     'Знайти арт: /get_image.\n'
