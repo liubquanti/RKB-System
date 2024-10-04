@@ -94,6 +94,21 @@ def is_user_allowed(update: Update) -> bool:
 
 async def start(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
+        args = context.args
+        if args:
+            post_id = args[0]
+            url = f"https://danbooru.donmai.us/posts/{post_id}.json"
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
+                data = response.json()
+                image_url = data.get('file_url')
+                if image_url and is_image_accessible(image_url):
+                    await update.message.reply_document(document=image_url)
+                    return
+            except (requests.RequestException, ValueError) as e:
+                print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
+    if not is_user_allowed(update):
         return
     await update.message.reply_text('Вітаю в системі RKB!\n'
                                     '\n'
@@ -128,7 +143,7 @@ async def publish_image(application: Application) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='{image_url}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     re.sub(r'_?\([^)]*\)', '', artist)
@@ -210,7 +225,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='{image_url}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -298,7 +313,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     'e': '🔴  •  #explicit'
                 }.get(rating, rating)
                 hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='{image_url}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+                channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
                 caption = (
                     f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
