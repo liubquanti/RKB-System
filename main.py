@@ -156,18 +156,18 @@ async def publish_image(application: Application) -> None:
     }
     rating = rating_map.get(rating, rating)
 
-    hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
+    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>✒️  • Арт без стиснення</a>\n\n<a href='https://t.me/rkbsystem'>🍓  • Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     re.sub(r'_?\([^)]*\)', '', artist)
 
     caption = (
-        f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"Арт: #{artist}\n"
-        f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
-        f"Рейт: {rating}\n"
-        f"{post_url}"
+        f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"🪶  •  #{artist}\n"
+        f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
+        f"{rating}\n"
+        f"🔗  •  {post_url}"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -238,17 +238,17 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     }
     rating = rating_map.get(rating, rating)
 
-    hashtags = f"{character_hashtags}\nКоп: {copyright_hashtags}"
-    channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
+    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>✒️  • Арт без стиснення</a>\n\n<a href='https://t.me/rkbsystem'>🍓  • Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
     caption = (
-        f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"Арт: #{artist}\n"
-        f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
-        f"Рейт: {rating}\n"
-        f"{post_url}"
+        f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"🪶  •  #{artist}\n"
+        f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
+        f"{rating}\n"
+        f"🔗  •  {post_url}"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -326,15 +326,15 @@ async def button(update: Update, context: CallbackContext) -> None:
                     'q': '🟠  •  #questionable',
                     'e': '🔴  •  #explicit'
                 }.get(rating, rating)
-                hashtags = character_hashtags + '\nКоп: ' + copyright_hashtags
-                channel_hashtags = f"{character_hashtags}\n{copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n<a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+                hashtags = character_hashtags + '\n🌐  •  ' + copyright_hashtags
+                channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>✒️  • Арт без стиснення</a>\n\n<a href='https://t.me/rkbsystem'>🍓  • Підписатися на RKBS</a>"
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
                 caption = (
-                    f"Час: {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"Арт: #{artist}\n"
-                    f"Перс: {hashtags if hashtags else 'Немає тегів'}\n"
-                    f"Рейт: {rating}\n"
-                    f"{post_url}"
+                    f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"🪶  •  #{artist}\n"
+                    f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
+                    f"{rating}\n"
+                    f"🔗  •  {post_url}"
                 )
                 channel_caption = f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
                 context.user_data['current_image'] = image_url
