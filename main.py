@@ -66,7 +66,9 @@ def get_random_image():
     return None, None, None, None, None, None, None, None
 
 def clean_character_name(name):
-    return re.sub(r'_?\([^)]*\)', '', name)
+    cleaned_name = re.sub(r'\([^)]*\)', '', name)  # Remove text within parentheses
+    cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
+    return cleaned_name.rstrip('_')  # Remove trailing underscore if it exists
 
 def update_tags_file():
     with open("tags.py", "w") as file:
