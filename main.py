@@ -167,7 +167,7 @@ async def publish_image(application: Application) -> None:
         f"🪶  •  #{artist}\n"
         f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
         f"{rating}\n"
-        f"🔗  •  {post_url}"
+        f"🔗  •  <a href='{post_url}'>Посилання</a>"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -248,7 +248,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         f"🪶  •  #{artist}\n"
         f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
         f"{rating}\n"
-        f"🔗  •  {post_url}"
+        f"🔗  •  <a href='{post_url}'>Посилання</a>"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -284,9 +284,9 @@ async def button(update: Update, context: CallbackContext) -> None:
              InlineKeyboardButton(rating_states["e"], callback_data='modify_explicit')]
         ]
 
-    async def edit_message_with_retry(attempt, max_retries, image_url, caption, reply_markup):
+    async def edit_message_with_retry(attempt, max_retries, image_url, caption, reply_markup, parse_mode):
         try:
-            await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption), reply_markup=reply_markup)
+            await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption, parse_mode=parse_mode), reply_markup=reply_markup)
             return True
         except Exception as e:
             print(f"{Fore.RED}[WRN] Не вдалося отримати фото: (спроба {attempt+1}/{max_retries}) {e}{Fore.RESET}")
@@ -334,13 +334,13 @@ async def button(update: Update, context: CallbackContext) -> None:
                     f"🪶  •  #{artist}\n"
                     f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
                     f"{rating}\n"
-                    f"🔗  •  {post_url}"
+                    f"🔗  •  <a href='{post_url}'>Посилання</a>"
                 )
                 channel_caption = f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
                 context.user_data['current_image'] = image_url
                 context.user_data['current_caption'] = caption
                 context.user_data['current_channel_caption'] = channel_caption
-                if await edit_message_with_retry(attempt, max_retries, image_url, caption, InlineKeyboardMarkup(create_keyboard())):
+                if await edit_message_with_retry(attempt, max_retries, image_url, caption, InlineKeyboardMarkup(create_keyboard()), parse_mode='HTML'):
                     break
         else:
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
