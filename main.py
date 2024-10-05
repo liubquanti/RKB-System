@@ -124,15 +124,15 @@ async def start(update: Update, context: CallbackContext) -> None:
                 return
         except (requests.RequestException, ValueError) as e:
             print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
-    await update.message.reply_text('Вітаю в системі RKB!\n'
+    await update.message.reply_text('🍓  •  Вітаю в системі RKB!\n'
                                     '\n'
-                                    'Знайти арт: /get_image.\n'
+                                    '🔎  •  Знайти арт: /get_image.\n'
                                     '\n'
-                                    'Додати тег: /add_tag <tag>.\n'
-                                    'Видалити тег: /remove_tag <tag>.\n'
-                                    'Заблокувати тег: /block_tag <tag>.\n'
-                                    'Розблокувати тег: /unblock_tag <tag>.\n'
-                                    'Всі теги: /list_tags.')
+                                    '➕  •  Додати тег: /add_tag <tag>.\n'
+                                    '➖  •  Видалити тег: /remove_tag <tag>.\n'
+                                    '🚫  •  Заблокувати тег: /block_tag <tag>.\n'
+                                    '✅  •  Розблокувати тег: /unblock_tag <tag>.\n'
+                                    '📃  •  Всі теги: /list_tags.')
     
 async def publish_image(application: Application) -> None:
     image_data = get_random_image()
@@ -157,7 +157,7 @@ async def publish_image(application: Application) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
-    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>✒️  • Арт без стиснення</a>\n\n<a href='https://t.me/rkbsystem'>🍓  • Підписатися на RKBS</a>"
+    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n✒️  • <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  • <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     re.sub(r'_?\([^)]*\)', '', artist)
@@ -239,7 +239,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
-    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>✒️  • Арт без стиснення</a>\n\n<a href='https://t.me/rkbsystem'>🍓  • Підписатися на RKBS</a>"
+    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -248,7 +248,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         f"🪶  •  #{artist}\n"
         f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
         f"{rating}\n"
-        f"🔗  •  {post_url}"
+        f"🔗  •  {post_url}"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -327,7 +327,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     'e': '🔴  •  #explicit'
                 }.get(rating, rating)
                 hashtags = character_hashtags + '\n🌐  •  ' + copyright_hashtags
-                channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n<a href='https://t.me/rkbsystem_bot?start={post_id}'>✒️  • Арт без стиснення</a>\n\n<a href='https://t.me/rkbsystem'>🍓  • Підписатися на RKBS</a>"
+                channel_hashtags = f"🎭  •  {character_hashtags}\n🌐  •  {copyright_hashtags}\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
                 caption = (
                     f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -345,7 +345,7 @@ async def button(update: Update, context: CallbackContext) -> None:
         else:
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
     elif query.data == 'block_character':
-        characters = context.user_data.get('current_caption').split('\n')[2].replace('Перс: ', '').split(' ')
+        characters = context.user_data.get('current_caption').split('\n')[2].replace('🎭  •  ', '').split(' ')
         characters = [char.replace('#', '') for char in characters if char]
 
         if characters:
