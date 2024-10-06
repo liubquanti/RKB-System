@@ -230,8 +230,8 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     }
 
     keyboard = [
-        [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-        [InlineKeyboardButton("Відхилити", callback_data='reject')],
+        [InlineKeyboardButton("✅ Підтвердити", callback_data='confirm'),
+         InlineKeyboardButton("❌ Відхилити", callback_data='reject')],
         [InlineKeyboardButton("🎭", callback_data='block_character'),
          InlineKeyboardButton("🪶", callback_data='block_author')],
         [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'),
@@ -274,8 +274,8 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         f"🪶  •  #{artist}\n"
         f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
         f"{rating}\n"
-        f"🔗  •  <a href='{post_url}'>Посилання</a>\n\n"
-        f"<blockquote expandable>{tag_string_general}\n‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ </blockquote>"
+        f"🔗  •  <a href='{post_url}'>Посилання</a>\n"
+        f"<blockquote expandable>{tag_string_general}\n</blockquote>"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -283,7 +283,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     context.user_data['current_caption'] = caption
     context.user_data['current_channel_caption'] = channel_caption
 
-    await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup, parse_mode='HTML')
+    await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup, parse_mode='HTML', show_caption_above_media=True)
 
 async def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
@@ -301,8 +301,8 @@ async def button(update: Update, context: CallbackContext) -> None:
     def create_keyboard():
         rating_states = get_rating_states()
         return [
-            [InlineKeyboardButton("Підтвердити", callback_data='confirm')],
-            [InlineKeyboardButton("Відхилити", callback_data='reject')],
+            [InlineKeyboardButton("✅ Підтвердити", callback_data='confirm'),
+             InlineKeyboardButton("❌ Відхилити", callback_data='reject')],
             [InlineKeyboardButton("🎭", callback_data='block_character'),
              InlineKeyboardButton("🪶", callback_data='block_author')],
             [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'), 
@@ -311,9 +311,9 @@ async def button(update: Update, context: CallbackContext) -> None:
              InlineKeyboardButton(rating_states["e"], callback_data='modify_explicit')]
         ]
 
-    async def edit_message_with_retry(attempt, max_retries, image_url, caption, reply_markup, parse_mode):
+    async def edit_message_with_retry(attempt, max_retries, image_url, caption, reply_markup, parse_mode, show_caption_above_media):
         try:
-            await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption, parse_mode=parse_mode), reply_markup=reply_markup)
+            await query.edit_message_media(media=InputMediaPhoto(image_url, caption=caption, parse_mode=parse_mode, show_caption_above_media=show_caption_above_media), reply_markup=reply_markup)
             return True
         except Exception as e:
             print(f"{Fore.RED}[WRN] Не вдалося отримати фото: (спроба {attempt+1}/{max_retries}) {e}{Fore.RESET}")
@@ -372,14 +372,14 @@ async def button(update: Update, context: CallbackContext) -> None:
                     f"🪶  •  #{artist}\n"
                     f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
                     f"{rating}\n"
-                    f"🔗  •  <a href='{post_url}'>Посилання</a>\n\n"
-                    f"<blockquote expandable>{tag_string_general}\n‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ </blockquote>"
+                    f"🔗  •  <a href='{post_url}'>Посилання</a>\n"
+                    f"<blockquote expandable>{tag_string_general}\n</blockquote>"
                 )
                 channel_caption = f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
                 context.user_data['current_image'] = image_url
                 context.user_data['current_caption'] = caption
                 context.user_data['current_channel_caption'] = channel_caption
-                if await edit_message_with_retry(attempt, max_retries, image_url, caption, InlineKeyboardMarkup(create_keyboard()), parse_mode='HTML'):
+                if await edit_message_with_retry(attempt, max_retries, image_url, caption, InlineKeyboardMarkup(create_keyboard()), parse_mode='HTML', show_caption_above_media=True):
                     break
         else:
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
