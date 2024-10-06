@@ -110,12 +110,14 @@ async def start(update: Update, context: CallbackContext) -> None:
                 data = response.json()
                 image_url = data.get('file_url')
                 if image_url and is_image_accessible(image_url):
+                    await update.message.reply_text('🤗  •  Надсилаємо вам арт!')
                     await update.message.reply_document(document=image_url)
                     user_name = update.effective_user.full_name
                     await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"👀  •  Користувач {user_name} (<a href='tg://user?id={update.effective_user.id}'>{update.effective_user.id}</a>) отримав <a href='https://t.me/rkbsystem_bot?start={post_id}'>фото</a>.", parse_mode='HTML')
                     return
             except (requests.RequestException, ValueError) as e:
                 print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
+        await update.message.reply_text('🍓  •  Вітаю в системі RKB!\n\n😨  •  Схоже, що Ви прийшли не з нашого каналу. Цей бот призначений, щоб швидко отримувати арти без стиснення, які публікуються в потоці @rkbsystem.\n\n👀  •  Якщо Ви прийшли за артами, то радимо підписатися на канал @rkbsystem. І пізніше зможете тут отримати роботи, які Вам сподобаються.')
     if not is_user_allowed(update):
         return
     args = context.args
