@@ -112,7 +112,7 @@ async def start(update: Update, context: CallbackContext) -> None:
                 if image_url and is_image_accessible(image_url):
                     await update.message.reply_document(document=image_url)
                     user_name = update.effective_user.full_name
-                    await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"Користувач {user_name} ({update.effective_user.id}) отримав фото.\nhttps://t.me/rkbsystem_bot?start={post_id}.")
+                    await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"👀  •  Користувач {user_name} (<a href='tg://user?id={update.effective_user.id}'>{update.effective_user.id}</a>) отримав <a href='https://t.me/rkbsystem_bot?start={post_id}'>фото</a>.", parse_mode='HTML')
                     return
             except (requests.RequestException, ValueError) as e:
                 print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
@@ -250,6 +250,8 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
+    tag_string_general = tag_string_general.replace(' ', '\n')
+
     rating_map = {
         'g': '🟢  •  #general',
         's': '🟡  •  #sensetive',
@@ -268,7 +270,8 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         f"🪶  •  #{artist}\n"
         f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
         f"{rating}\n"
-        f"🔗  •  <a href='{post_url}'>Посилання</a>"
+        f"🔗  •  <a href='{post_url}'>Посилання</a>\n\n"
+        f"<blockquote expandable>{tag_string_general}\n‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ </blockquote>"
     )
     channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
@@ -346,6 +349,9 @@ async def button(update: Update, context: CallbackContext) -> None:
 
                 cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
                 copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
+
+                tag_string_general = tag_string_general.replace(' ', '\n')
+
                 rating = {
                     'g': '🟢  •  #general',
                     's': '🟡  •  #sensetive',
@@ -360,7 +366,8 @@ async def button(update: Update, context: CallbackContext) -> None:
                     f"🪶  •  #{artist}\n"
                     f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
                     f"{rating}\n"
-                    f"🔗  •  <a href='{post_url}'>Посилання</a>"
+                    f"🔗  •  <a href='{post_url}'>Посилання</a>\n\n"
+                    f"<blockquote expandable>{tag_string_general}\n‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ </blockquote>"
                 )
                 channel_caption = f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
                 context.user_data['current_image'] = image_url
