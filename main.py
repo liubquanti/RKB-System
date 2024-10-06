@@ -111,6 +111,8 @@ async def start(update: Update, context: CallbackContext) -> None:
                 image_url = data.get('file_url')
                 if image_url and is_image_accessible(image_url):
                     await update.message.reply_document(document=image_url)
+                    user_name = update.effective_user.full_name
+                    await context.bot.send_message(chat_id=ALLOWED_USER_ID, text=f"Користувач {user_name} ({update.effective_user.id}) отримав фото.\nhttps://t.me/rkbsystem_bot?start={post_id}.")
                     return
             except (requests.RequestException, ValueError) as e:
                 print(f"{Fore.RED}[WRN] Не вдалося отримати дані фото: {e}{Fore.RESET}")
