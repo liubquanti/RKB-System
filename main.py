@@ -66,9 +66,12 @@ def get_random_image():
     return None, None, None, None, None, None, None, None
 
 def clean_character_name(name):
-    cleaned_name = re.sub(r'\([^)]*\)', '', name)  # Remove text within parentheses
+    return (name)
+
+def clean_character_name_publish(name):
+    cleaned_name = re.sub(r'\([^)]*\)', '', name)
     cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
-    return cleaned_name.rstrip('_')  # Remove trailing underscore if it exists
+    return cleaned_name.rstrip('_')
 
 def update_tags_file():
     with open("tags.py", "w") as file:
@@ -150,6 +153,12 @@ async def publish_image(application: Application) -> None:
     cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
 
+    cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
+    character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
+
+    cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
+    copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
+
     rating_map = {
         'g': '🟢  •  #general',
         's': '🟡  •  #sensetive',
@@ -159,7 +168,7 @@ async def publish_image(application: Application) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
-    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n✒️  • <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  • <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    channel_hashtags = f"🎭  • {character_hashtags_publish}\n🌐  • {copyright_hashtags_publish}\n\n✒️  • <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  • <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     re.sub(r'_?\([^)]*\)', '', artist)
@@ -232,6 +241,12 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
 
+    cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
+    character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
+
+    cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
+    copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
+
     rating_map = {
         'g': '🟢  •  #general',
         's': '🟡  •  #sensetive',
@@ -241,7 +256,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     rating = rating_map.get(rating, rating)
 
     hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
-    channel_hashtags = f"🎭  • {character_hashtags}\n🌐  • {copyright_hashtags}\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    channel_hashtags = f"🎭  • {character_hashtags_publish}\n🌐  • {copyright_hashtags_publish}\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
 
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
 
@@ -322,6 +337,12 @@ async def button(update: Update, context: CallbackContext) -> None:
                 character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
                 cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
                 copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+
+                cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
+                character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
+
+                cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
+                copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
                 rating = {
                     'g': '🟢  •  #general',
                     's': '🟡  •  #sensetive',
@@ -329,7 +350,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     'e': '🔴  •  #explicit'
                 }.get(rating, rating)
                 hashtags = character_hashtags + '\n🌐  •  ' + copyright_hashtags
-                channel_hashtags = f"🎭  •  {character_hashtags}\n🌐  •  {copyright_hashtags}\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+                channel_hashtags = f"🎭  •  {character_hashtags_publish}\n🌐  •  {copyright_hashtags_publish}\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
                 post_url = f"https://danbooru.donmai.us/posts/{post_id}"
                 caption = (
                     f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
