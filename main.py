@@ -70,9 +70,9 @@ def clean_character_name(name):
 
 def clean_character_name_publish(name):
     cleaned_name = re.sub(r'\([^)]*\)', '', name)
-    cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
     cleaned_name = cleaned_name.replace('/', '_')
     cleaned_name = re.sub(r'[^a-zA-Z0-9_]', '', cleaned_name)
+    cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
     return cleaned_name.rstrip('_')
 
 def update_tags_file():
