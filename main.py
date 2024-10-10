@@ -14,6 +14,7 @@ from config import TOKEN, CHANNEL_ID, ALLOWED_USER_ID, MODE
 from tags import tags
 from rating import rating_tags
 from banned import banned_tags
+from necessary import necessary_tags
 
 def is_image_accessible(url):
     try:
@@ -49,6 +50,9 @@ def get_random_image():
                 continue
 
             if any(rating_tag in rating for rating_tag in rating_tags):
+                continue
+
+            if not any(necessary_tag in tag_string for necessary_tag in necessary_tags):
                 continue
 
             if is_image_accessible(image_url):
