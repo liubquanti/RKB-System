@@ -74,8 +74,9 @@ def clean_character_name(name):
 
 def clean_character_name_publish(name):
     cleaned_name = re.sub(r'\([^)]*\)', '', name)
-    cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
+    cleaned_name = cleaned_name.replace('/', '_')
     cleaned_name = re.sub(r'[^a-zA-Z0-9_]', '', cleaned_name)
+    cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
     return cleaned_name.rstrip('_')
 
 def update_tags_file():
@@ -257,7 +258,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
-    tag_string_general = tag_string_general.replace(' ', '\n')
+    tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
 
     rating_map = {
         'g': '🟢  •  #general',
@@ -358,7 +359,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                 cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
                 copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
-                tag_string_general = tag_string_general.replace(' ', '\n')
+                tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
 
                 rating = {
                     'g': '🟢  •  #general',
