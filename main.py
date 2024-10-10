@@ -254,7 +254,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
-    tag_string_general = tag_string_general.replace(' ', '\n')
+    tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
 
     rating_map = {
         'g': '🟢  •  #general',
@@ -355,7 +355,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                 cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
                 copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
-                tag_string_general = tag_string_general.replace(' ', '\n')
+                tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
 
                 rating = {
                     'g': '🟢  •  #general',
