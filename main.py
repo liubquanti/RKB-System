@@ -208,7 +208,7 @@ def schedule_next_job(application: Application) -> None:
     now = datetime.now()
     next_run_time = (now + timedelta(hours=1)).replace(minute=random_minute, second=0, microsecond=0)
     print(f"{Fore.YELLOW}[LOG] Наступне фото буде відправлено: {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}{Fore.RESET}")
-    scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,))
+    scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,), misfire_grace_time=5)
 
 def start_scheduler(application: Application) -> None:
     scheduler = AsyncIOScheduler()
