@@ -11,10 +11,13 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Call
 import requests
 from datetime import datetime, timedelta
 from config import TOKEN, CHANNEL_ID, ALLOWED_USER_ID, MODE
-from tags import tags
 from rating import rating_tags
-from banned import banned_tags
-from necessary import necessary_tags
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+cred = credentials.Certificate('firebase.json')
+firebase_admin.initialize_app(cred)
+db = firestore.client()
 
 def is_image_accessible(url):
     try:
@@ -79,19 +82,28 @@ def clean_character_name_publish(name):
     cleaned_name = '_'.join(word.capitalize() if word.islower() else word for word in cleaned_name.split('_'))
     return cleaned_name.rstrip('_')
 
-def update_tags_file():
-    with open("tags.py", "w") as file:
-        file.write("tags = [\n")
-        for tag in tags:
-            file.write(f'    "{tag}",\n')
-        file.write("]\n")
+async def get_tags_from_firestore(collection_name):
+    doc_ref = db.collection(collection_name).document('tags')
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict().get('tags', [])
+    return []
 
-def update_banned_tags_file():
-    with open('banned.py', 'w') as file:
-        file.write('banned_tags = [\n')
-        for tag in banned_tags:
-            file.write(f'    "{tag}",\n')
-        file.write(']\n')
+async def update_tags_in_firestore(collection_name, tags_list):
+    doc_ref = db.collection(collection_name).document('tags')
+    doc_ref.set({'tags': tags_list})
+
+async def update_tags_file():
+    await update_tags_in_firestore('tags', tags)
+
+async def update_banned_tags_file():
+    await update_tags_in_firestore('banned', banned_tags)
+
+async def initialize_tags():
+    global tags, banned_tags, necessary_tags
+    tags = await get_tags_from_firestore('tags')
+    banned_tags = await get_tags_from_firestore('banned')
+    necessary_tags = await get_tags_from_firestore('necessary')
 
 async def delete_message_later(context: CallbackContext, message_id: int, chat_id: int, delay: int = 1):
     await asyncio.sleep(delay)
@@ -402,7 +414,7 @@ async def button(update: Update, context: CallbackContext) -> None:
         char_to_ban = query.data.split('_', 1)[1]
         if char_to_ban and char_to_ban not in banned_tags:
             banned_tags.append(char_to_ban)
-            update_banned_tags_file()
+            await update_banned_tags_file()
             response = await query.message.reply_text(f'Персонаж "{char_to_ban}" успішно заблоковано.')
             await delete_message_later(context, response.message_id, response.chat_id, delay=1)
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
@@ -421,10 +433,10 @@ async def button(update: Update, context: CallbackContext) -> None:
                 file.write(f'    "{g}",\n')
             file.write("]\n")
     elif query.data == 'block_author':
-        author = context.user_data.get('current_caption').split('\n')[1].replace('Арт: #', '')
+        author = context.user_data.get('current_caption').split('\n')[1].replace('🪶  •  #', '')
         if author:
             banned_tags.append(author)
-            update_banned_tags_file()
+            await update_banned_tags_file()
             response = await query.message.reply_text(f'Автор "{author}" успішно заблоковано.')
             await delete_message_later(context, response.message_id, response.chat_id, delay=1)
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
@@ -436,7 +448,7 @@ async def add_tag(update: Update, context: CallbackContext) -> None:
     if tag:
         if tag not in tags:
             tags.append(tag)
-            update_tags_file()
+            await update_tags_file()
             response = await update.message.reply_text(f'Tег "{tag}" успішно додано.')
         else:
             response = await update.message.reply_text(f'Tег "{tag}" вже існує.')
@@ -453,7 +465,7 @@ async def remove_tag(update: Update, context: CallbackContext) -> None:
     if tag:
         if tag in tags:
             tags.remove(tag)
-            update_tags_file()
+            await update_tags_file()
             response = await update.message.reply_text(f'Tег "{tag}" успішно видалено.')
         else:
             response = await update.message.reply_text(f'Tег "{tag}" не знайдено.')
@@ -478,7 +490,7 @@ async def block_tag(update: Update, context: CallbackContext) -> None:
     if tag:
         if tag not in banned_tags:
             banned_tags.append(tag)
-            update_banned_tags_file()
+            await update_banned_tags_file()
             response = await update.message.reply_text(f'Tег "{tag}" успішно заблоковано.')
         else:
             response = await update.message.reply_text(f'Tег "{tag}" вже заблоковано.')
@@ -495,7 +507,7 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
     if tag:
         if tag in banned_tags:
             banned_tags.remove(tag)
-            update_banned_tags_file()
+            await update_banned_tags_file()
             response = await update.message.reply_text(f'Tег "{tag}" успішно розблоковано.')
         else:
             response = await update.message.reply_text(f'Tег "{tag}" не знайдено серед заблокованих.')
@@ -509,6 +521,8 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
+
+    asyncio.get_event_loop().run_until_complete(initialize_tags())
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("get_image", get_image))
