@@ -162,55 +162,54 @@ async def start(update: Update, context: CallbackContext) -> None:
                                     '📃  •  Всі теги: /list_tags.')
     
 async def publish_image(application: Application) -> None:
-    image_data = get_random_image()
-    if not image_data[0]:
-        print(f"{Fore.RED}[WRN] Не вдалося отримати фото.{Fore.RESET}")
-        return
+    max_retries = 5
+    
+    for attempt in range(max_retries):
+        image_data = get_random_image()
+        if not image_data[0]:
+            print(f"{Fore.RED}[WRN] Не вдалося отримати фото (спроба {attempt+1}/{max_retries}){Fore.RESET}")
+            if attempt < max_retries - 1:
+                time.sleep(1)
+                continue
+            schedule_next_job(application)
+            return
 
-    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
+        image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
 
-    cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
-    character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
+        cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
+        character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
 
-    cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
-    copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+        cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
+        copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
 
-    cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
-    character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
+        cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
+        character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
 
-    cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
-    copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
+        cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
+        copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
-    rating_map = {
-        'g': '🟢  •  #general',
-        's': '🟡  •  #sensetive',
-        'q': '🟠  •  #questionable',
-        'e': '🔴  •  #explicit'
-    }
-    rating = rating_map.get(rating, rating)
+        rating = {
+            'g': '🟢  •  #general',
+            's': '🟡  •  #sensetive', 
+            'q': '🟠  •  #questionable',
+            'e': '🔴  •  #explicit'
+        }.get(rating, rating)
 
-    hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
-    channel_hashtags = '\n'.join(f"🎭  •  #{char}" for char in cleaned_characters_publish) + '\n' + \
-                       '\n'.join(f"🌐  •  #{copyright}" for copyright in cleaned_copyrights_publish) + \
-                       f"\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
-    post_url = f"https://danbooru.donmai.us/posts/{post_id}"
-    re.sub(r'_?\([^)]*\)', '', artist)
+        channel_hashtags = '\n'.join(f"🎭  •  #{char}" for char in cleaned_characters_publish) + '\n' + \
+                        '\n'.join(f"🌐  •  #{copyright}" for copyright in cleaned_copyrights_publish) + \
+                        f"\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+        
+        channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
 
-    caption = (
-        f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"🪶  •  #{artist}\n"
-        f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
-        f"{rating}\n"
-        f"🔗  •  <a href='{post_url}'>Посилання</a>"
-    )
-    channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
-
-    try:
-        await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
-        print(f"{Fore.YELLOW}[LOG] Фото успішно опублікувано.{Fore.RESET}")
-    except Exception as e:
-        print(f"{Fore.RED}[WRN] Не вдалося відправити фото: {e}{Fore.RESET}")
-
+        try:
+            await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
+            print(f"{Fore.YELLOW}[LOG] Фото успішно опублікувано.{Fore.RESET}")
+            break
+        except Exception as e:
+            print(f"{Fore.RED}[WRN] Не вдалося відправити фото (спроба {attempt+1}/{max_retries}): {e}{Fore.RESET}")
+            if attempt < max_retries - 1: 
+                time.sleep(1)
+                continue
 
     schedule_next_job(application)
 
