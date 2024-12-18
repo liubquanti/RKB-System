@@ -217,12 +217,14 @@ def schedule_next_job(application: Application) -> None:
     scheduler = application.job_queue.scheduler
     random_minute = random.randint(0, 59)
     now = datetime.now()
-    next_run_time = (now + timedelta(hours=1)).replace(minute=random_minute, second=0, microsecond=0)
+    next_run_time = (now + timedelta(hours=random.randint(1, 6))).replace(minute=random_minute, second=0, microsecond=0)
     print(f"{Fore.YELLOW}[LOG] Наступне фото буде відправлено: {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}{Fore.RESET}")
     scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,), misfire_grace_time=5)
 
 def start_scheduler(application: Application) -> None:
-    scheduler = AsyncIOScheduler()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    scheduler = AsyncIOScheduler(event_loop=loop)
     application.job_queue.scheduler = scheduler
     scheduler.start()
     schedule_next_job(application)
@@ -521,7 +523,7 @@ async def unblock_tag(update: Update, context: CallbackContext) -> None:
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
-    asyncio.get_event_loop().run_until_complete(initialize_tags())
+    asyncio.run(initialize_tags())
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("get_image", get_image))
