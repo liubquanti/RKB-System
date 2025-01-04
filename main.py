@@ -217,7 +217,7 @@ def schedule_next_job(application: Application) -> None:
     scheduler = application.job_queue.scheduler
     random_minute = random.randint(0, 59)
     now = datetime.now()
-    next_run_time = (now + timedelta(hours=random.randint(1, 6))).replace(minute=random_minute, second=0, microsecond=0)
+    next_run_time = (now + timedelta(hours=random.randint(4, 8))).replace(minute=random_minute, second=0, microsecond=0)
     print(f"{Fore.YELLOW}[LOG] Наступне фото буде відправлено: {next_run_time.strftime('%Y-%m-%d %H:%M:%S')}{Fore.RESET}")
     scheduler.add_job(publish_image, 'date', run_date=next_run_time, args=(application,), misfire_grace_time=5)
 
