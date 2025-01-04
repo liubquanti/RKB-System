@@ -11,7 +11,6 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Call
 import requests
 from datetime import datetime, timedelta
 from config import TOKEN, CHANNEL_ID, ALLOWED_USER_ID, MODE
-from rating import rating_tags
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -100,10 +99,29 @@ async def update_banned_tags_file():
     await update_tags_in_firestore('banned', banned_tags)
 
 async def initialize_tags():
-    global tags, banned_tags, necessary_tags
+    global tags, banned_tags, necessary_tags, rating_tags
     tags = await get_tags_from_firestore('tags')
     banned_tags = await get_tags_from_firestore('banned')
     necessary_tags = await get_tags_from_firestore('necessary')
+    rating_tags = await get_rating_tags_from_firestore()
+
+async def get_rating_tags_from_firestore():
+    doc_ref = db.collection('rating').document('tags')
+    doc = doc_ref.get()
+    if doc.exists:
+        data = doc.to_dict()
+        return [tag for tag in ['e', 'g', 'q', 's'] if data.get(tag, False)]
+    return []
+
+async def update_rating_tags_in_firestore(rating_tags):
+    doc_ref = db.collection('rating').document('tags')
+    data = {
+        'e': 'e' in rating_tags,
+        'g': 'g' in rating_tags,
+        'q': 'q' in rating_tags,
+        's': 's' in rating_tags
+    }
+    doc_ref.set(data)
 
 async def delete_message_later(context: CallbackContext, message_id: int, chat_id: int, delay: int = 1):
     await asyncio.sleep(delay)
@@ -427,6 +445,7 @@ async def button(update: Update, context: CallbackContext) -> None:
             rating_tags.remove(tag_to_modify)
         else:
             rating_tags.append(tag_to_modify)
+        await update_rating_tags_in_firestore(rating_tags)
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
         with open("rating.py", "w") as file:
             file.write("rating_tags = [\n")
