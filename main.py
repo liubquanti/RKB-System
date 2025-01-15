@@ -247,6 +247,56 @@ def start_scheduler(application: Application) -> None:
     scheduler.start()
     schedule_next_job(application)
 
+async def format_captions(image_data):
+    """Helper function to format captions from image data"""
+    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
+    
+    # Format characters
+    cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
+    character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
+    
+    cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
+    character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
+
+    # Format copyrights
+    cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
+    copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
+    
+    cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
+    copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
+
+    # Format tags and rating
+    tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
+    rating = {
+        'g': '🟢  •  #general',
+        's': '🟡  •  #sensetive',
+        'q': '🟠  •  #questionable',
+        'e': '🔴  •  #explicit'
+    }.get(rating, rating)
+
+    # Create hashtags
+    hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
+    channel_hashtags = (
+        '\n'.join(f"🎭  •  #{char}" for char in cleaned_characters_publish) + '\n' +
+        '\n'.join(f"🌐  •  #{copyright}" for copyright in cleaned_copyrights_publish) +
+        f"\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n" +
+        f"🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
+    )
+
+    # Create captions
+    post_url = f"https://danbooru.donmai.us/posts/{post_id}"
+    main_caption = (
+        f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"🪶  •  #{artist}\n"
+        f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
+        f"{rating}\n"
+        f"🔗  •  <a href='{post_url}'>Посилання</a>\n"
+        f"<blockquote expandable>{tag_string_general}\n</blockquote>"
+    )
+    channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
+
+    return image_url, main_caption, channel_caption
+
 async def get_image(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
@@ -256,96 +306,26 @@ async def get_image(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text('Не вдалося отримати зображення. Спробуйте ще раз.')
         return
 
-    image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
-
-    rating_states = {
-        "g": "🔘" if "g" in rating_tags else "🟢",
-        "q": "🔘" if "q" in rating_tags else "🟠",
-        "s": "🔘" if "s" in rating_tags else "🟡",
-        "e": "🔘" if "e" in rating_tags else "🔴"
-    }
-
-    keyboard = [
-        [InlineKeyboardButton("✅ Підтвердити", callback_data='confirm'),
-         InlineKeyboardButton("❌ Відхилити", callback_data='reject')],
-        [InlineKeyboardButton("🎭", callback_data='block_character'),
-         InlineKeyboardButton("🪶", callback_data='block_author')],
-        [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'),
-         InlineKeyboardButton(rating_states["s"], callback_data='modify_sensetive'),
-         InlineKeyboardButton(rating_states["q"], callback_data='modify_questionable'),
-         InlineKeyboardButton(rating_states["e"], callback_data='modify_explicit')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
-    character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
-
-    cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
-    copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
-
-    cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
-    character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
-
-    cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
-    copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
-
-    tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
-
-    rating_map = {
-        'g': '🟢  •  #general',
-        's': '🟡  •  #sensetive',
-        'q': '🟠  •  #questionable',
-        'e': '🔴  •  #explicit'
-    }
-    rating = rating_map.get(rating, rating)
-
-    hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
-    channel_hashtags = '\n'.join(f"🎭  •  #{char}" for char in cleaned_characters_publish) + '\n' + \
-                       '\n'.join(f"🌐  •  #{copyright}" for copyright in cleaned_copyrights_publish) + \
-                       f"\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
-    post_url = f"https://danbooru.donmai.us/posts/{post_id}"
-
-    caption = (
-        f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"🪶  •  #{artist}\n"
-        f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
-        f"{rating}\n"
-        f"🔗  •  <a href='{post_url}'>Посилання</a>\n"
-        f"<blockquote expandable>{tag_string_general}\n</blockquote>"
-    )
-    channel_caption = channel_hashtags if channel_hashtags else 'Немає тегів'
-
+    image_url, caption, channel_caption = await format_captions(image_data)
+    
     context.user_data['current_image'] = image_url
     context.user_data['current_caption'] = caption
     context.user_data['current_channel_caption'] = channel_caption
 
-    await update.message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup, parse_mode='HTML', show_caption_above_media=True)
+    keyboard = create_keyboard()
+    await update.message.reply_photo(
+        photo=image_url,
+        caption=caption,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode='HTML',
+        show_caption_above_media=True
+    )
 
 async def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     await query.answer()
-
-    def get_rating_states():
-        states = {
-            "g": "🟢",
-            "q": "🟠",
-            "s": "🟡",
-            "e": "🔴"
-        }
-        return {tag: "🔘" if tag in rating_tags else states[tag] for tag in states}
-
-    def create_keyboard():
-        rating_states = get_rating_states()
-        return [
-            [InlineKeyboardButton("✅ Підтвердити", callback_data='confirm'),
-             InlineKeyboardButton("❌ Відхилити", callback_data='reject')],
-            [InlineKeyboardButton("🎭", callback_data='block_character'),
-             InlineKeyboardButton("🪶", callback_data='block_author')],
-            [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'), 
-             InlineKeyboardButton(rating_states["s"], callback_data='modify_sensetive'), 
-             InlineKeyboardButton(rating_states["q"], callback_data='modify_questionable'), 
-             InlineKeyboardButton(rating_states["e"], callback_data='modify_explicit')]
-        ]
+    
+    keyboard = create_keyboard()
 
     async def edit_message_with_retry(attempt, max_retries, image_url, caption, reply_markup, parse_mode, show_caption_above_media):
         try:
@@ -377,44 +357,14 @@ async def button(update: Update, context: CallbackContext) -> None:
     elif query.data == 'reject':
         max_retries = 5
         for attempt in range(max_retries):
-            image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = get_random_image()
-            if image_url:
-                cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
-                character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
-                cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
-                copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
-
-                cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
-                character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
-
-                cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
-                copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
-
-                tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
-
-                rating = {
-                    'g': '🟢  •  #general',
-                    's': '🟡  •  #sensetive',
-                    'q': '🟠  •  #questionable',
-                    'e': '🔴  •  #explicit'
-                }.get(rating, rating)
-                hashtags = character_hashtags + '\n🌐  •  ' + copyright_hashtags
-                channel_hashtags = '\n'.join(f"🎭  •  #{char}" for char in cleaned_characters_publish) + '\n' + \
-                                   '\n'.join(f"🌐  •  #{copyright}" for copyright in cleaned_copyrights_publish) + \
-                                   f"\n\n✒️  •  <a href='https://t.me/rkbsystem_bot?start={post_id}'>Арт без стиснення</a>\n\n🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
-                post_url = f"https://danbooru.donmai.us/posts/{post_id}"
-                caption = (
-                    f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"🪶  •  #{artist}\n"
-                    f"🎭  •  {hashtags if hashtags else 'Немає тегів'}\n"
-                    f"{rating}\n"
-                    f"🔗  •  <a href='{post_url}'>Посилання</a>\n"
-                    f"<blockquote expandable>{tag_string_general}\n</blockquote>"
-                )
-                channel_caption = f"{channel_hashtags if channel_hashtags else 'Немає тегів'}"
+            image_data = get_random_image()
+            if image_data[0]:
+                image_url, caption, channel_caption = await format_captions(image_data)
+                
                 context.user_data['current_image'] = image_url
                 context.user_data['current_caption'] = caption
                 context.user_data['current_channel_caption'] = channel_caption
+
                 if await edit_message_with_retry(attempt, max_retries, image_url, caption, InlineKeyboardMarkup(create_keyboard()), parse_mode='HTML', show_caption_above_media=True):
                     break
         else:
@@ -460,6 +410,28 @@ async def button(update: Update, context: CallbackContext) -> None:
             response = await query.message.reply_text(f'Автор "{author}" успішно заблоковано.')
             await delete_message_later(context, response.message_id, response.chat_id, delay=1)
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(create_keyboard()))
+
+def create_keyboard():
+    rating_states = get_rating_states()
+    return [
+        [InlineKeyboardButton("✅ Підтвердити", callback_data='confirm'),
+         InlineKeyboardButton("❌ Відхилити", callback_data='reject')],
+        [InlineKeyboardButton("🎭", callback_data='block_character'),
+         InlineKeyboardButton("🪶", callback_data='block_author')],
+        [InlineKeyboardButton(rating_states["g"], callback_data='modify_general'), 
+         InlineKeyboardButton(rating_states["s"], callback_data='modify_sensetive'), 
+         InlineKeyboardButton(rating_states["q"], callback_data='modify_questionable'), 
+         InlineKeyboardButton(rating_states["e"], callback_data='modify_explicit')]
+    ]
+
+def get_rating_states():
+    states = {
+        "g": "🟢",
+        "q": "🟠",
+        "s": "🟡",
+        "e": "🔴"
+    }
+    return {tag: "🔘" if tag in rating_tags else states[tag] for tag in states}
 
 async def add_tag(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
