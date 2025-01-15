@@ -18,6 +18,26 @@ cred = credentials.Certificate('firebase.json')
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+async def is_post_published(post_id):
+    doc_ref = db.collection('published').document('arts')
+    doc = doc_ref.get()
+    if doc.exists:
+        published_ids = doc.to_dict().get('ids', [])
+        return str(post_id) in published_ids
+    return False
+
+async def save_published_post(post_id):
+    doc_ref = db.collection('published').document('arts')
+    doc = doc_ref.get()
+    if doc.exists:
+        published_ids = doc.to_dict().get('ids', [])
+    else:
+        published_ids = []
+    
+    if str(post_id) not in published_ids:
+        published_ids.append(str(post_id))
+        doc_ref.set({'ids': published_ids})
+
 def is_image_accessible(url):
     try:
         response = requests.head(url)
@@ -25,7 +45,7 @@ def is_image_accessible(url):
     except requests.RequestException:
         return False
 
-def get_random_image():
+async def get_random_image():
     random_tag = random.choice(tags)
     url = f"https://danbooru.donmai.us/posts.json?tags={random_tag}&random=true"
 
@@ -47,6 +67,10 @@ def get_random_image():
             image_url = image_data.get('file_url')
             tag_string = image_data.get('tag_string', '')
             rating = image_data.get('rating', '')
+            post_id = image_data.get('id')
+
+            if await check_published_post(post_id):
+                continue
 
             if any(banned_tag in tag_string for banned_tag in banned_tags):
                 continue
@@ -65,11 +89,31 @@ def get_random_image():
                     image_data.get('tag_string_copyright', ''),
                     rating,
                     image_data.get('tag_string_general', ''),
-                    image_data.get('id'),
+                    post_id,
                     image_data.get('tag_string_artist', '')
                 )
 
     return None, None, None, None, None, None, None, None
+
+async def check_published_post(post_id):
+    doc_ref = db.collection('published').document('arts')
+    doc = doc_ref.get()
+    if doc.exists:
+        published_ids = doc.to_dict().get('ids', [])
+        return str(post_id) in published_ids
+    return False
+
+async def save_published_post(post_id):
+    doc_ref = db.collection('published').document('arts')
+    doc = doc_ref.get()
+    if doc.exists:
+        published_ids = doc.to_dict().get('ids', [])
+    else:
+        published_ids = []
+    
+    if str(post_id) not in published_ids:
+        published_ids.append(str(post_id))
+        doc_ref.set({'ids': published_ids})
 
 def clean_character_name(name):
     return (name)
@@ -183,7 +227,7 @@ async def publish_image(application: Application) -> None:
     max_retries = 5
     
     for attempt in range(max_retries):
-        image_data = get_random_image()
+        image_data = await get_random_image()
         if not image_data[0]:
             print(f"{Fore.RED}[WRN] Не вдалося отримати фото (спроба {attempt+1}/{max_retries}){Fore.RESET}")
             if attempt < max_retries - 1:
@@ -193,6 +237,7 @@ async def publish_image(application: Application) -> None:
             return
 
         image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
+        post_id = image_data[6]
 
         cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
         character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
@@ -248,24 +293,20 @@ def start_scheduler(application: Application) -> None:
     schedule_next_job(application)
 
 async def format_captions(image_data):
-    """Helper function to format captions from image data"""
     image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
     
-    # Format characters
     cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
     character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
     
     cleaned_characters_publish = {clean_character_name_publish(char) for char in characters.split(', ')}
     character_hashtags_publish = ' '.join(f"#{char}" for char in cleaned_characters_publish)
 
-    # Format copyrights
     cleaned_copyrights = {clean_character_name(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights)
     
     cleaned_copyrights_publish = {clean_character_name_publish(copyright) for copyright in copyright_info.split(' ')}
     copyright_hashtags_publish = ' '.join(f"#{copyright}" for copyright in cleaned_copyrights_publish)
 
-    # Format tags and rating
     tag_string_general = '\n'.join(f'<code>{tag}</code>' for tag in tag_string_general.split())
     rating = {
         'g': '🟢  •  #general',
@@ -274,7 +315,6 @@ async def format_captions(image_data):
         'e': '🔴  •  #explicit'
     }.get(rating, rating)
 
-    # Create hashtags
     hashtags = f"{character_hashtags}\n🌐  •  {copyright_hashtags}"
     channel_hashtags = (
         '\n'.join(f"🎭  •  #{char}" for char in cleaned_characters_publish) + '\n' +
@@ -283,7 +323,6 @@ async def format_captions(image_data):
         f"🍓  •  <a href='https://t.me/rkbsystem'>Підписатися на RKBS</a>"
     )
 
-    # Create captions
     post_url = f"https://danbooru.donmai.us/posts/{post_id}"
     main_caption = (
         f"🕒  •  {datetime.fromisoformat(published_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -301,7 +340,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
 
-    image_data = get_random_image()
+    image_data = await get_random_image()  # Now using await
     if not image_data[0]:
         await update.message.reply_text('Не вдалося отримати зображення. Спробуйте ще раз.')
         return
@@ -342,11 +381,15 @@ async def button(update: Update, context: CallbackContext) -> None:
     if query.data == 'confirm':
         image_url = context.user_data.get('current_image')
         channel_caption = context.user_data.get('current_channel_caption')
-        if image_url:
+        caption = context.user_data.get('current_caption')
+        post_id_match = re.search(r'danbooru\.donmai\.us/posts/(\d+)', caption)
+        if post_id_match:
+            post_id = post_id_match.group(1)
             try:
                 await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
+                await save_published_post(post_id)  # Save post ID after successful publication
                 await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(f"Опублікувано!", callback_data='reject')]]
+                    [[InlineKeyboardButton(f"Опубліковано!", callback_data='reject')]]
                 ))
                 print(f"{Fore.YELLOW}[LOG] Фото опубліковано!{Fore.RESET}")
                 time.sleep(1)
@@ -357,7 +400,7 @@ async def button(update: Update, context: CallbackContext) -> None:
     elif query.data == 'reject':
         max_retries = 5
         for attempt in range(max_retries):
-            image_data = get_random_image()
+            image_data = await get_random_image()
             if image_data[0]:
                 image_url, caption, channel_caption = await format_captions(image_data)
                 
