@@ -231,13 +231,12 @@ async def publish_image(application: Application) -> None:
         if not image_data[0]:
             print(f"{Fore.RED}[WRN] Не вдалося отримати фото (спроба {attempt+1}/{max_retries}){Fore.RESET}")
             if attempt < max_retries - 1:
-                time.sleep(1)
+                await asyncio.sleep(1)
                 continue
             schedule_next_job(application)
             return
 
         image_url, published_at, characters, copyright_info, rating, tag_string_general, post_id, artist = image_data
-        post_id = image_data[6]
 
         cleaned_characters = {clean_character_name(char) for char in characters.split(', ')}
         character_hashtags = ' '.join(f"#{char}" for char in cleaned_characters)
@@ -266,12 +265,13 @@ async def publish_image(application: Application) -> None:
 
         try:
             await application.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
-            print(f"{Fore.YELLOW}[LOG] Фото успішно опублікувано.{Fore.RESET}")
+            await save_published_post(post_id)
+            print(f"{Fore.YELLOW}[LOG] Фото успішно опубліковано.{Fore.RESET}")
             break
         except Exception as e:
             print(f"{Fore.RED}[WRN] Не вдалося відправити фото (спроба {attempt+1}/{max_retries}): {e}{Fore.RESET}")
-            if attempt < max_retries - 1: 
-                time.sleep(1)
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1)
                 continue
 
     schedule_next_job(application)
@@ -340,7 +340,7 @@ async def get_image(update: Update, context: CallbackContext) -> None:
     if not is_user_allowed(update):
         return
 
-    image_data = await get_random_image()  # Now using await
+    image_data = await get_random_image()
     if not image_data[0]:
         await update.message.reply_text('Не вдалося отримати зображення. Спробуйте ще раз.')
         return
@@ -387,7 +387,7 @@ async def button(update: Update, context: CallbackContext) -> None:
             post_id = post_id_match.group(1)
             try:
                 await context.bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=channel_caption, parse_mode='HTML')
-                await save_published_post(post_id)  # Save post ID after successful publication
+                await save_published_post(post_id)
                 await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton(f"Опубліковано!", callback_data='reject')]]
                 ))
