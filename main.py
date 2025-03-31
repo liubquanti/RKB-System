@@ -3,11 +3,10 @@ import os
 import random
 import time
 import asyncio
-import schedule
 from colorama import Fore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import requests
 from datetime import datetime, timedelta
 from config import TOKEN, CHANNEL_ID, ALLOWED_USER_ID, MODE
